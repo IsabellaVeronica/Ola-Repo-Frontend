@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 44 33% 94%; /* Principal (Bottom Right) */
+    --foreground: 211 65% 22%; /* Principal (Dark Blue) */
+    --card: 48 33% 97%; /* Lighter off-white */
+    --card-foreground: 211 65% 22%;
+    --popover: 48 33% 97%;
+    --popover-foreground: 211 65% 22%;
+    --primary: 211 65% 22%; /* Dark Blue */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 15 65% 48%; /* Burnt Orange */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 33 27% 85%; /* Complementos Left (Beige) */
+    --muted-foreground: 211 40% 40%;
+    --accent: 48 83% 86%; /* Acentos Visuales Left (Pale Yellow) */
+    --accent-foreground: 211 65% 22%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 33 27% 85%;
+    --input: 33 27% 85%;
+    --ring: 15 65% 48%; /* Orange Focus Ring */
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 211 65% 10%;
+    --foreground: 44 33% 94%;
+    --card: 211 65% 15%;
+    --card-foreground: 44 33% 94%;
+    --popover: 211 65% 15%;
+    --popover-foreground: 44 33% 94%;
+    --primary: 48 83% 86%; /* Pale Yellow in Dark Mode */
+    --primary-foreground: 211 65% 10%;
+    --secondary: 15 65% 48%; /* Burnt Orange */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 211 40% 25%;
+    --muted-foreground: 33 27% 85%;
+    --accent: 48 83% 86%;
+    --accent-foreground: 211 65% 10%;
+    --destructive: 0 62.8% 40%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 211 40% 25%;
+    --input: 211 40% 25%;
+    --ring: 15 65% 48%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+@keyframes marquee-ltr {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.animate-marquee-ltr {
+  animation: marquee-ltr 18s linear infinite;
+}
+
+/* Make the marquee truly seamless by doubling the content */
+.animate-marquee-ltr:hover {
+  animation-play-state: paused;
+}

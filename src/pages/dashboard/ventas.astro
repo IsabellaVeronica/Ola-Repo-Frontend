@@ -1,0 +1,26 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Dashboard/Header.astro";
+import Sidebar from "../../components/Dashboard/Sidebar.astro";
+import { VentasManager } from "../../components/Dashboard/Sales/VentasManager";
+import { AuthGuard } from "../../components/Dashboard/AuthGuard";
+
+const token = Astro.cookies.get("token")?.value;
+if (!token) {
+  return Astro.redirect("/login");
+}
+---
+
+<Layout title="Ventas | Panel de Control">
+  <div class="flex flex-col min-h-screen bg-background">
+    <Header />
+    <div class="flex flex-1">
+      <Sidebar />
+      <main class="flex-1 p-6 md:p-8">
+        <AuthGuard client:load allowedRoles={['admin', 'manager', 'vendedor']} panelName="Ventas">
+          <VentasManager client:only="react" />
+        </AuthGuard>
+      </main>
+    </div>
+  </div>
+</Layout>

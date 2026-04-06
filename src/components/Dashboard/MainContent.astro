@@ -1,0 +1,23 @@
+---
+import { StockAlerts } from "./Home/StockAlerts";
+import { RecentOutlets } from "./Home/RecentOutlets";
+---
+
+<main class="flex-1 p-8 overflow-y-auto">
+    <div class="mb-8">
+        <h2 class="text-3xl font-bold text-foreground tracking-tight">Vista Principal</h2>
+        <p class="mt-2 text-muted-foreground">Bienvenido de nuevo al panel de control.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Low Stock Alerts Widget */}
+        <div class="col-span-1">
+            <StockAlerts client:visible />
+        </div>
+
+        {/* Recent Outlets Widget */}
+        <div class="col-span-1">
+            <RecentOutlets client:visible />
+        </div>
+    </div>
+</main>

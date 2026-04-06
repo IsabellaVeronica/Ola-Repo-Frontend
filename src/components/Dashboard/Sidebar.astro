@@ -1,0 +1,48 @@
+---
+const { pathname } = Astro.url;
+const isActive = (path: string) => {
+    // Exact match or match with trailing slash
+    return pathname === path || pathname === path + '/';
+};
+---
+<aside class="w-64 p-4 bg-card/80 backdrop-blur-sm border-r border-border">
+    <nav>
+        <ul class="space-y-1">
+            <li>
+                <a href="/dashboard" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                    Principal
+                </a>
+            </li>
+            <li>
+                <a href="/dashboard/users" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/users') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                    Usuarios
+                </a>
+            </li>
+            <li>
+                <a href="/dashboard/products" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/products') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                    Inventario
+                </a>
+            </li>
+            <li>
+                <a href="/dashboard/orders" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/orders') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                    Pedidos
+                </a>
+            </li>
+            <li>
+                <a href="/dashboard/ventas" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/ventas') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                    Ventas
+                </a>
+            </li>
+            <li>
+                <a href="/dashboard/audit" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/audit') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                    Auditoría
+                </a>
+            </li>
+            <li>
+                <a href="/dashboard/settings" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/settings') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                    Configuración
+                </a>
+            </li>
+        </ul>
+    </nav>
+</aside>
