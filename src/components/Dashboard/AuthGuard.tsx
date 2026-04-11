@@ -55,7 +55,12 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles, pa
         );
     }
 
-    const hasPermission = user.roles.some(role => allowedRoles.includes(role));
+    // Normalizar roles para evitar errores de undefined
+    const rawRoles = user.roles ?? (user as any).role;
+    const userRoles = Array.isArray(rawRoles) ? rawRoles : rawRoles ? [rawRoles] : [];
+    const required = Array.isArray(allowedRoles) ? allowedRoles : [];
+
+    const hasPermission = required.length === 0 || required.some(role => userRoles.includes(role));
 
     if (!hasPermission) {
         return (
@@ -83,7 +88,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children, allowedRoles, pa
                         </div>
                     </div>
                     <p className="text-sm text-muted-foreground italic">
-                        Tu rol actual es: <span className="font-semibold text-foreground uppercase">{user.roles.join(', ') || 'sin rol'}</span>
+                        Tu rol actual es: <span className="font-semibold text-foreground uppercase">{userRoles.join(', ') || 'sin rol'}</span>
                     </p>
                     <div className="pt-4">
                         <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>

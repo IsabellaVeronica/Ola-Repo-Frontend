@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import {
     Loader2, Search, Filter, ChevronLeft, ChevronRight, X,
     FileJson, Package, ShoppingCart, User, ShieldCheck,
-    RefreshCcw, Plus, Minus, AlertTriangle, Key, Layers, Calendar
+    RefreshCcw, Plus, Minus, AlertTriangle, Key, Layers, Calendar,
+    DollarSign, Wallet, Tag
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -127,6 +128,9 @@ export const AuditLogViewer: React.FC = () => {
         if (action.includes('PRODUCT') || action.includes('VARIANT')) return <Package className="w-3.5 h-3.5 text-foreground" />;
         if (action.includes('PEDIDO')) return <ShoppingCart className="w-3.5 h-3.5 text-foreground" />;
         if (action.includes('INV')) return <Plus className="w-3.5 h-3.5 text-foreground" />;
+        if (action.includes('MONEY') || action.includes('GASTO') || action.includes('VENTA')) return <DollarSign className="w-3.5 h-3.5 text-foreground" />;
+        if (action.includes('CASH_BOX')) return <Wallet className="w-3.5 h-3.5 text-foreground" />;
+        if (action.includes('CATEGORY')) return <Tag className="w-3.5 h-3.5 text-foreground" />;
         if (action.includes('PASSWORD') || action.includes('ROLE') || action === 'ENABLE' || action === 'DISABLE') return <ShieldCheck className="w-3.5 h-3.5 text-foreground" />;
         if (action.includes('UPDATE')) return <RefreshCcw className="w-3.5 h-3.5 text-foreground" />;
         return <AlertTriangle className="w-3.5 h-3.5 text-foreground" />;
@@ -138,6 +142,7 @@ export const AuditLogViewer: React.FC = () => {
         if (a.includes('PEDIDO')) return 'Pedido';
         if (a.includes('INV')) return 'Inventario';
         if (a.includes('VENTA')) return 'Venta';
+        if (a.includes('MONEY') || a.includes('EXPENSE') || a.includes('GASTO') || a.includes('CASH')) return 'Dinero';
         if (a.includes('PASSWORD') || a.includes('ROLE') || a === 'ENABLE' || a === 'DISABLE' || a.includes('USUARIO')) return 'Seguridad';
         return 'Sistema';
     };
@@ -232,6 +237,19 @@ export const AuditLogViewer: React.FC = () => {
             case 'BRAND_SOFT_DELETE':
             case 'BRAND_DISABLE':
                 return <>{boldActor} <span className="text-red-500">eliminó</span> la marca <span className="font-semibold">{brandName}</span></>;
+            case 'MONEY_EXPENSE_CREATE':
+                return <>{boldActor} registró un <span className="text-rose-600 font-bold">gasto</span> de <span className="font-black">${payload.monto}</span></>;
+            case 'MONEY_EXPENSE_CATEGORY_CREATE':
+                return <>{boldActor} creó la categoría de gasto <span className="font-semibold">{payload.nombre || log.target_label}</span></>;
+            case 'MONEY_EXPENSE_CATEGORY_UPDATE':
+                return <>{boldActor} actualizó la categoría de gasto <span className="font-semibold">{payload.nombre || log.target_label}</span></>;
+            case 'MONEY_CASH_BOX_CREATE':
+                return <>{boldActor} creó la caja/cuenta <span className="font-semibold">{payload.nombre || log.target_label}</span></>;
+            case 'MONEY_CASH_BOX_UPDATE':
+                return <>{boldActor} actualizó la caja/cuenta <span className="font-semibold">{payload.nombre || log.target_label}</span></>;
+            case 'MONEY_CASH_MOVEMENT_CREATE':
+                const isIngreso = payload.tipo === 'ingreso';
+                return <>{boldActor} registró un <span className={isIngreso ? "text-green-600 font-bold" : "text-rose-600 font-bold"}>{isIngreso ? 'ingreso' : 'egreso'}</span> de <span className="font-black">${payload.monto}</span></>;
             default:
                 return <>
                     {boldActor} realizó la acción <span className="font-semibold italic text-foreground/70">{displayAction}</span>
