@@ -185,10 +185,10 @@ export const CartDrawer: React.FC = () => {
 
         // 4. Redirect to WhatsApp
         if (backendWaUrl) {
-            window.open(backendWaUrl, '_blank');
+            window.location.href = backendWaUrl;
         } else {
             // Fallback to frontend-generated URL if backend fails
-            const phoneNumber = settings?.whatsapp?.numero || "573001234567";
+            const phoneNumber = settings?.whatsapp?.numero || "584147334567";
             const name = customerName.trim() || "Cliente";
             const currency = settings?.catalogo?.simbolo_moneda || '$';
             const showDecimals = settings?.catalogo?.mostrar_decimales !== false;
@@ -202,8 +202,8 @@ export const CartDrawer: React.FC = () => {
                 ? `${settings.whatsapp.mensaje_bienvenida}\n\n${itemsList}\n\n*Total: ${currency}${formatPrice(total)}*`
                 : `*Hola!* \n\nMi nombre es *${name}* e hice un pedido:\n\n${itemsList}\n\n*Total: ${currency}${formatPrice(total)}*\n\n¿Cómo procedo con el pago?`;
 
-            const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-            window.open(url, '_blank');
+            const url = `https://wa.me/${phoneNumber.replace('+', '')}?text=${encodeURIComponent(message)}`;
+            window.location.href = url;
         }
 
         setIsSubmitting(false);
