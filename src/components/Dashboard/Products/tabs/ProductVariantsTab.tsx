@@ -167,9 +167,9 @@ export const ProductVariantsTab: React.FC<ProductVariantsTabProps> = ({ product 
 
     return (
         <div className="space-y-4 pt-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h3 className="text-lg font-medium">Variantes del Producto</h3>
-                <Button onClick={() => handleOpenDialog()} size="sm">
+                <Button onClick={() => handleOpenDialog()} size="sm" className="w-full sm:w-auto">
                     <Plus className="mr-2 h-4 w-4" /> Agregar Variante
                 </Button>
             </div>
@@ -181,7 +181,7 @@ export const ProductVariantsTab: React.FC<ProductVariantsTabProps> = ({ product 
                 </p>
             </div>
 
-            <div className="border rounded-md">
+            <div className="border rounded-md overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>

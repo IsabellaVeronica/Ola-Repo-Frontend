@@ -88,9 +88,9 @@ export const MoneyMovements: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4 bg-card/40 p-4 rounded-2xl border border-border/40">
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                     <Select value={filters.tipo} onValueChange={(v) => setFilters({...filters, tipo: v, page: 1})}>
-                        <SelectTrigger className="w-[140px] font-bold h-10 rounded-xl">
+                        <SelectTrigger className="flex-1 sm:w-[140px] font-bold h-10 rounded-xl">
                             <SelectValue placeholder="Tipo" />
                         </SelectTrigger>
                         <SelectContent>
@@ -99,9 +99,9 @@ export const MoneyMovements: React.FC = () => {
                             <SelectItem value="gasto">Gastos</SelectItem>
                         </SelectContent>
                     </Select>
-
+                    
                     <Select value={filters.metodo} onValueChange={(v) => setFilters({...filters, metodo: v, page: 1})}>
-                        <SelectTrigger className="w-[160px] font-bold h-10 rounded-xl">
+                        <SelectTrigger className="flex-1 sm:w-[160px] font-bold h-10 rounded-xl">
                             <SelectValue placeholder="Método" />
                         </SelectTrigger>
                         <SelectContent>
@@ -116,7 +116,7 @@ export const MoneyMovements: React.FC = () => {
                     <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-muted-foreground hover:text-primary font-bold text-xs uppercase tracking-widest gap-2"
+                        className="w-full sm:w-auto text-muted-foreground hover:text-primary font-bold text-xs uppercase tracking-widest gap-2"
                         onClick={() => setFilters({ 
                             tipo: 'all', 
                             metodo: 'all', 
@@ -130,7 +130,7 @@ export const MoneyMovements: React.FC = () => {
                     </Button>
                 </div>
 
-                <div className="flex items-center gap-2 border-l border-border/40 pl-4">
+                <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-border/40 pt-4 sm:pt-0 sm:pl-4 w-full sm:w-auto overflow-x-auto whitespace-nowrap">
                     <div className="flex items-center gap-1">
                         <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest mr-1">Rango:</span>
                         <input 
@@ -149,7 +149,7 @@ export const MoneyMovements: React.FC = () => {
                     </div>
                 </div>
 
-                <Button variant="outline" size="sm" className="font-bold gap-2 rounded-xl">
+                <Button variant="outline" size="sm" className="font-bold gap-2 rounded-xl w-full sm:w-auto">
                     <FileDown className="h-4 w-4" /> Exportar CSV
                 </Button>
             </div>

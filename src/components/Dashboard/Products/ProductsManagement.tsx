@@ -16,17 +16,19 @@ export const ProductsManagement = () => {
             </div>
 
             <Tabs defaultValue="inventory" className="w-full">
-                <TabsList className="bg-card/60 backdrop-blur-md border border-foreground/10 p-1 shadow-sm">
-                    <TabsTrigger value="inventory" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
-                        <Box className="h-4 w-4" /> Productos
-                    </TabsTrigger>
-                    <TabsTrigger value="taxonomies" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
-                        <Tags className="h-4 w-4" /> Categorías y Marcas
-                    </TabsTrigger>
-                    <TabsTrigger value="reports" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
-                        <FileText className="h-4 w-4" /> Reportes
-                    </TabsTrigger>
-                </TabsList>
+                <div className="overflow-x-auto w-full pb-2">
+                    <TabsList className="bg-card/60 backdrop-blur-md border border-foreground/10 p-1 shadow-sm w-fit sm:w-full justify-start whitespace-nowrap">
+                        <TabsTrigger value="inventory" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <Box className="h-4 w-4" /> Productos
+                        </TabsTrigger>
+                        <TabsTrigger value="taxonomies" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <Tags className="h-4 w-4" /> Categorías y Marcas
+                        </TabsTrigger>
+                        <TabsTrigger value="reports" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <FileText className="h-4 w-4" /> Reportes
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="inventory" className="mt-6">
                     <ProductList />

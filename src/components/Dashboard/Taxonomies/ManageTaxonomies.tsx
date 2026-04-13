@@ -215,13 +215,13 @@ export const ManageTaxonomies = () => {
 
             <Card className="bg-card/40 backdrop-blur-md border-white/10 shadow-xl overflow-hidden">
                 <CardHeader className="pb-3 border-b border-white/5">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <CardTitle className="flex items-center gap-2">
                             <Tags className="h-5 w-5 text-primary" />
                             Listado General
                         </CardTitle>
-                        <div className="flex items-center gap-3 w-full max-w-md">
-                            <div className="relative flex-1">
+                        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:max-w-md">
+                            <div className="relative w-full">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
                                     placeholder="Buscar..."
@@ -233,7 +233,7 @@ export const ManageTaxonomies = () => {
                             <Button
                                 size="sm"
                                 onClick={handleOpenCreateDialog}
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
+                                className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20 w-full sm:w-auto shrink-0"
                             >
                                 <Plus className="h-4 w-4 mr-2" />
                                 Nueva {activeTab === 'brands' ? 'Marca' : 'Categoría'}
@@ -243,14 +243,16 @@ export const ManageTaxonomies = () => {
                 </CardHeader>
                 <CardContent className="p-0">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="w-full justify-start rounded-none border-b border-white/5 bg-transparent p-0 h-12">
-                            <TabsTrigger value="brands" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/5 px-6 h-full">
-                                Marcas
-                            </TabsTrigger>
-                            <TabsTrigger value="categories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/5 px-6 h-full">
-                                Categorías
-                            </TabsTrigger>
-                        </TabsList>
+                        <div className="overflow-x-auto w-full border-b border-white/5">
+                            <TabsList className="w-full justify-start rounded-none bg-transparent p-0 h-12">
+                                <TabsTrigger value="brands" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/5 px-6 h-full whitespace-nowrap">
+                                    Marcas
+                                </TabsTrigger>
+                                <TabsTrigger value="categories" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/5 px-6 h-full whitespace-nowrap">
+                                    Categorías
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
 
                         <TabsContent value="brands" className="m-0">
                             <Table>

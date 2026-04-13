@@ -121,19 +121,23 @@ export const ProductList = () => {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <div className="relative w-72">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="relative w-full sm:w-72">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                         placeholder="Buscar productos..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9"
+                        className="pl-9 w-full"
                     />
                 </div>
-                <div className="flex gap-2">
-                    <ImportInventoryDialog onImportSuccess={fetchProducts} />
-                    <CreateProductDialog onProductCreated={fetchProducts} />
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="flex-1 sm:flex-none">
+                        <ImportInventoryDialog onImportSuccess={fetchProducts} />
+                    </div>
+                    <div className="flex-1 sm:flex-none">
+                        <CreateProductDialog onProductCreated={fetchProducts} />
+                    </div>
                 </div>
             </div>
             <Card>
@@ -147,8 +151,9 @@ export const ProductList = () => {
                         </div>
                     )}
                 </CardHeader>
-                <CardContent>
-                    <Table>
+                <CardContent className="p-0 sm:p-6">
+                    <div className="overflow-x-auto w-full">
+                        <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Nombre</TableHead>
@@ -231,7 +236,8 @@ export const ProductList = () => {
                                 ))
                             )}
                         </TableBody>
-                    </Table>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
 

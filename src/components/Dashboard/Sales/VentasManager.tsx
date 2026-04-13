@@ -716,14 +716,14 @@ const VentasManagerContent: React.FC = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-primary">Ventas</h2>
                     <p className="text-muted-foreground text-sm">Historial y gestión de ventas concretadas.</p>
                 </div>
                 <button
                     onClick={() => setView('new')}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
                 >
                     <Plus className="h-4 w-4" /> Registrar Venta
                 </button>
@@ -738,7 +738,7 @@ const VentasManagerContent: React.FC = () => {
 
             {/* Filters */}
             <div className="rounded-lg border bg-card shadow-sm p-4 space-y-3">
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <input type="text" placeholder="Buscar por cliente, cédula..."
@@ -746,21 +746,23 @@ const VentasManagerContent: React.FC = () => {
                             value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
                     </div>
                     <select
-                        className="h-10 w-full md:w-44 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="h-10 w-full sm:w-44 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
                     >
                         <option value="">Todos los estados</option>
                         <option value="completada">Completadas</option>
                         <option value="anulada">Anuladas</option>
                     </select>
-                    <button onClick={() => setShowFilters(!showFilters)}
-                        className={`h-10 px-4 rounded-md border text-sm font-medium flex items-center gap-2 transition-colors ${showFilters ? 'bg-secondary text-secondary-foreground border-secondary' : 'bg-background hover:bg-accent border-input'}`}>
-                        <Filter className="h-4 w-4" /> Fechas
-                    </button>
-                    <button onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1); }}
-                        className="h-10 px-4 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted transition-colors">
-                        Limpiar
-                    </button>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <button onClick={() => setShowFilters(!showFilters)}
+                            className={`flex-1 sm:flex-none h-10 px-4 rounded-md border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${showFilters ? 'bg-secondary text-secondary-foreground border-secondary' : 'bg-background hover:bg-accent border-input'}`}>
+                            <Filter className="h-4 w-4" /> Fechas
+                        </button>
+                        <button onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1); }}
+                            className="flex-1 sm:flex-none h-10 px-4 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted transition-colors">
+                            Limpiar
+                        </button>
+                    </div>
                 </div>
                 {showFilters && (
                     <div className="grid grid-cols-2 gap-3 pt-2 border-t">
