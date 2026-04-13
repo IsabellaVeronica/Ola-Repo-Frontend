@@ -149,17 +149,19 @@ export const UserList = () => {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center">
-                <div className="relative w-72">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+                <div className="relative w-full sm:w-72">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
                         placeholder="Buscar usuarios..."
                         value={searchTerm}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                        className="pl-9"
+                        className="pl-9 w-full"
                     />
                 </div>
-                <CreateUserDialog onUserCreated={fetchUsers} />
+                <div className="w-full sm:w-auto">
+                    <CreateUserDialog onUserCreated={fetchUsers} />
+                </div>
             </div>
 
             <Card>
@@ -175,92 +177,98 @@ export const UserList = () => {
                         </div>
                     )}
                 </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Nombre</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Rol</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
+                <CardContent className="p-0 sm:p-6">
+                    <div className="overflow-x-auto w-full">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                        Cargando usuarios...
-                                    </TableCell>
+                                    <TableHead className="whitespace-nowrap">Nombre</TableHead>
+                                    <TableHead className="whitespace-nowrap">Email</TableHead>
+                                    <TableHead className="whitespace-nowrap">Rol</TableHead>
+                                    <TableHead className="whitespace-nowrap">Estado</TableHead>
+                                    <TableHead className="text-right whitespace-nowrap">Acciones</TableHead>
                                 </TableRow>
-                            ) : users.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                        No se encontraron usuarios.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                users.map((user) => (
-                                    <TableRow key={user.id_usuario}>
-                                        <TableCell className="font-medium">{user.nombre}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className="capitalize">
-                                                {user.roles && user.roles.length > 0 ? user.roles.join(', ') : 'viewer'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            {user.activo ? (
-                                                <Badge className="bg-green-500 hover:bg-green-600">Activo</Badge>
-                                            ) : (
-                                                <Badge variant="destructive">Inactivo</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    title="Cambiar Password"
-                                                    onClick={() => setSelectedUserForPassword(user)}
-                                                >
-                                                    <Key className="h-4 w-4 text-muted-foreground" />
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    title="Editar Rol"
-                                                    onClick={() => setSelectedUserForRole(user)}
-                                                >
-                                                    <Settings className="h-4 w-4 text-muted-foreground" />
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    title={user.activo ? "Desactivar" : "Activar"}
-                                                    onClick={() => setUserToToggleStatus(user)}
-                                                >
-                                                    {user.activo ? (
-                                                        <Ban className="h-4 w-4 text-red-500" />
-                                                    ) : (
-                                                        <CheckCircle className="h-4 w-4 text-green-500" />
-                                                    )}
-                                                </Button>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    title="Eliminar permanentemente"
-                                                    onClick={() => setUserToDelete(user)}
-                                                >
-                                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                                </Button>
-                                            </div>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                            Cargando usuarios...
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
+                                ) : users.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                            No se encontraron usuarios.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    users.map((user) => (
+                                        <TableRow key={user.id_usuario}>
+                                            <TableCell className="font-medium whitespace-nowrap">{user.nombre}</TableCell>
+                                            <TableCell className="whitespace-nowrap">{user.email}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="capitalize whitespace-nowrap">
+                                                    {user.roles && user.roles.length > 0 ? user.roles.join(', ') : 'viewer'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {user.activo ? (
+                                                    <Badge className="bg-green-500 hover:bg-green-600">Activo</Badge>
+                                                ) : (
+                                                    <Badge variant="destructive">Inactivo</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8"
+                                                        title="Cambiar Password"
+                                                        onClick={() => setSelectedUserForPassword(user)}
+                                                    >
+                                                        <Key className="h-4 w-4 text-muted-foreground" />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8"
+                                                        title="Editar Rol"
+                                                        onClick={() => setSelectedUserForRole(user)}
+                                                    >
+                                                        <Settings className="h-4 w-4 text-muted-foreground" />
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8"
+                                                        title={user.activo ? "Desactivar" : "Activar"}
+                                                        onClick={() => setUserToToggleStatus(user)}
+                                                    >
+                                                        {user.activo ? (
+                                                            <Ban className="h-4 w-4 text-red-500" />
+                                                        ) : (
+                                                            <CheckCircle className="h-4 w-4 text-green-500" />
+                                                        )}
+                                                    </Button>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        className="h-8 w-8"
+                                                        title="Eliminar permanentemente"
+                                                        onClick={() => setUserToDelete(user)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-600" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
 
                     {/* Pagination */}
                     <div className="flex items-center justify-end space-x-2 py-4">

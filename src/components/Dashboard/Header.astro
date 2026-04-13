@@ -1,11 +1,16 @@
-<header class="flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-40">
-    <div class="flex items-center gap-4">
-        <button id="mobile-menu-toggle" class="lg:hidden p-2 hover:bg-secondary rounded-md" aria-label="Abrir menú">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+<header class="flex items-center justify-between p-3 sm:p-4 bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-40 gap-2">
+    <div class="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+        <button id="mobile-menu-toggle" class="lg:hidden p-2 hover:bg-secondary rounded-md shrink-0" aria-label="Abrir menú">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
         </button>
-        <h1 class="text-xl md:text-2xl font-bold text-foreground truncate">Panel Administrativo</h1>
+        <h1 class="text-sm xs:text-base sm:text-xl font-bold text-foreground truncate uppercase tracking-tighter sm:tracking-normal">
+            <span class="xs:hidden">Admin</span>
+            <span class="hidden xs:inline">Panel Administrativo</span>
+        </h1>
     </div>
-    <button id="logout-button" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 text-sm whitespace-nowrap">Cerrar Sesión</button>
+    <button id="logout-button" class="px-2 py-1.5 sm:px-4 sm:py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 text-[10px] xs:text-xs sm:text-sm whitespace-nowrap shrink-0 font-bold">
+        SALIR
+    </button>
 </header>
 
 <script>

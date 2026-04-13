@@ -121,7 +121,7 @@ export const ProductList = () => {
 
     return (
         <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
                 <div className="relative w-full sm:w-72">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
@@ -132,10 +132,10 @@ export const ProductList = () => {
                     />
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                    <div className="flex-1 sm:flex-none">
+                    <div className="flex-1">
                         <ImportInventoryDialog onImportSuccess={fetchProducts} />
                     </div>
-                    <div className="flex-1 sm:flex-none">
+                    <div className="flex-1">
                         <CreateProductDialog onProductCreated={fetchProducts} />
                     </div>
                 </div>
@@ -156,13 +156,13 @@ export const ProductList = () => {
                         <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Nombre</TableHead>
-                                <TableHead>Categoría</TableHead>
-                                <TableHead>Marca</TableHead>
-                                <TableHead className="text-center">Variantes</TableHead>
-                                <TableHead className="text-center">Stock Total</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead className="text-right">Acciones</TableHead>
+                                <TableHead className="whitespace-nowrap">Nombre</TableHead>
+                                <TableHead className="whitespace-nowrap">Categoría</TableHead>
+                                <TableHead className="whitespace-nowrap">Marca</TableHead>
+                                <TableHead className="text-center whitespace-nowrap">Variantes</TableHead>
+                                <TableHead className="text-center whitespace-nowrap">Stock Total</TableHead>
+                                <TableHead className="whitespace-nowrap">Estado</TableHead>
+                                <TableHead className="text-right whitespace-nowrap">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>

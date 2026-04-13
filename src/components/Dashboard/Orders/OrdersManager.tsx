@@ -251,10 +251,10 @@ const OrdersManagerContent: React.FC = () => {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
                     <div>
-                        <h2 className="text-3xl font-bold tracking-tight text-primary">Gestión de Pedidos</h2>
-                        <p className="text-muted-foreground">Administra y da seguimiento a los pedidos de clientes.</p>
+                        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-primary">Gestión de Pedidos</h2>
+                        <p className="text-muted-foreground text-sm hidden sm:block">Administra y da seguimiento a los pedidos de clientes.</p>
                     </div>
                 </div>
 
@@ -267,10 +267,10 @@ const OrdersManagerContent: React.FC = () => {
 
                 <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
                     <form onSubmit={handleSearchSubmit} className="space-y-4">
-                        <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
                             {/* Order ID Filter */}
-                            <div className="w-full md:w-32 relative">
-                                <Hash className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <div className="w-full sm:w-24 relative">
+                                <Hash className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <input
                                     type="text"
                                     placeholder="ID"
@@ -279,10 +279,10 @@ const OrdersManagerContent: React.FC = () => {
                                     onChange={(e) => { setOrderIdFilter(e.target.value); setPage(1); }}
                                 />
                             </div>
-
+RA:
                             {/* Search Name/Email */}
                             <div className="flex-1 relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <input
                                     type="text"
                                     placeholder="Buscar por cliente..."
@@ -292,13 +292,13 @@ const OrdersManagerContent: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="w-full md:w-48">
+                            <div className="w-full sm:w-44">
                                 <select
                                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                     value={statusFilter}
                                     onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                                 >
-                                    <option value="">Todos los Estados</option>
+                                    <option value="">Estados</option>
                                     <option value="nuevo">Nuevos</option>
                                     <option value="contactado">Contactados</option>
                                     <option value="concretado">Concretados</option>
@@ -306,17 +306,19 @@ const OrdersManagerContent: React.FC = () => {
                                 </select>
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={() => setShowFilters(!showFilters)}
-                                className={`h-10 px-4 rounded-md border text-sm font-medium transition-colors flex items-center gap-2 ${showFilters ? 'bg-secondary text-secondary-foreground' : 'bg-background hover:bg-accent'}`}
-                            >
-                                <Filter className="h-4 w-4" /> Filtros
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className={`flex-1 sm:w-auto h-10 px-4 rounded-md border text-sm font-medium transition-colors flex items-center justify-center gap-2 ${showFilters ? 'bg-secondary text-secondary-foreground font-bold border-secondary' : 'bg-background hover:bg-accent'}`}
+                                >
+                                    <Filter className="h-4 w-4" /> <span className="sm:hidden lg:inline">Filtros</span>
+                                </button>
 
-                            <button type="submit" className="h-10 px-4 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors">
-                                Buscar
-                            </button>
+                                <button type="submit" className="flex-1 sm:w-auto h-10 px-4 bg-primary text-primary-foreground rounded-md text-sm font-bold hover:bg-primary/90 transition-colors">
+                                    IR
+                                </button>
+                            </div>
                         </div>
 
                         {showFilters && (
@@ -351,12 +353,12 @@ const OrdersManagerContent: React.FC = () => {
                     <table className="w-full caption-bottom text-sm text-left">
                         <thead className="[&_tr]:border-b bg-muted/40">
                             <tr className="border-b">
-                                <th className="h-12 px-4 align-middle font-medium text-muted-foreground">ID</th>
-                                <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Cliente</th>
-                                <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Fecha</th>
-                                <th className="h-12 px-4 align-middle font-medium text-muted-foreground">Estado</th>
-                                <th className="h-12 px-4 align-middle font-medium text-muted-foreground text-right">Total</th>
-                                <th className="h-12 px-4 align-middle font-medium text-muted-foreground text-center">Acciones</th>
+                                <th className="h-12 px-4 align-middle font-black text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">ID</th>
+                                <th className="h-12 px-4 align-middle font-black text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">Cliente</th>
+                                <th className="h-12 px-4 align-middle font-black text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">Fecha</th>
+                                <th className="h-12 px-4 align-middle font-black text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap">Estado</th>
+                                <th className="h-12 px-4 align-middle font-black text-[10px] uppercase tracking-widest text-muted-foreground text-right whitespace-nowrap">Total</th>
+                                <th className="h-12 px-4 align-middle font-black text-[10px] uppercase tracking-widest text-muted-foreground text-center whitespace-nowrap">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="[&_tr:last-child]:border-0">

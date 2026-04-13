@@ -445,13 +445,13 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
     return (
         <div className="flex flex-col h-full gap-6">
             {/* Title */}
-            <div className="flex items-center gap-4">
-                <button onClick={onCancel} className="p-2 rounded-lg hover:bg-muted transition-colors border border-border">
+            <div className="flex items-center gap-3">
+                <button onClick={onCancel} className="p-2 rounded-lg hover:bg-muted transition-colors border border-border shrink-0">
                     <ArrowLeft className="h-4 w-4" />
                 </button>
-                <div>
-                    <h2 className="text-2xl font-bold text-primary">Registrar Venta</h2>
-                    <p className="text-sm text-muted-foreground">Selecciona variantes del catálogo.</p>
+                <div className="min-w-0">
+                    <h2 className="text-lg sm:text-2xl font-bold text-primary truncate">Registrar Venta</h2>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Selecciona variantes del catálogo.</p>
                 </div>
             </div>
 
@@ -716,10 +716,10 @@ const VentasManagerContent: React.FC = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-primary">Ventas</h2>
-                    <p className="text-muted-foreground text-sm">Historial y gestión de ventas concretadas.</p>
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-primary">Ventas</h2>
+                    <p className="text-muted-foreground text-sm hidden sm:block">Historial y gestión de ventas concretadas.</p>
                 </div>
                 <button
                     onClick={() => setView('new')}
@@ -785,7 +785,7 @@ const VentasManagerContent: React.FC = () => {
                         <thead className="bg-muted/40">
                             <tr className="border-b">
                                 {['ID', 'Cliente', 'Fecha', 'Método', 'Estado', 'Total', ''].map((h, i) => (
-                                    <th key={i} className={`h-12 px-4 font-medium text-muted-foreground ${h === 'Total' ? 'text-right' : h === '' ? 'text-center' : ''}`}>{h}</th>
+                                    <th key={i} className={`h-12 px-4 font-medium text-muted-foreground whitespace-nowrap ${h === 'Total' ? 'text-right' : h === '' ? 'text-center' : ''}`}>{h}</th>
                                 ))}
                             </tr>
                         </thead>

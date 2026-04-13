@@ -10,8 +10,8 @@ export const ProductsManagement = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground drop-shadow-sm">Gestión de Inventario</h1>
-                    <p className="text-foreground/70 font-medium">Administra tu inventario, marcas y categorías en un solo lugar.</p>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground drop-shadow-sm">Gestión de Inventario</h1>
+                    <p className="text-foreground/70 font-medium hidden sm:block">Administra tu inventario, marcas y categorías en un solo lugar.</p>
                 </div>
             </div>
 

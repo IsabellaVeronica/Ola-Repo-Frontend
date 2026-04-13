@@ -155,81 +155,83 @@ export const MoneyMovements: React.FC = () => {
             </div>
 
             <div className="rounded-2xl border border-border/40 overflow-hidden bg-card/50 dark:bg-slate-900/40 backdrop-blur-sm">
-                <Table>
-                    <TableHeader className="bg-muted/50">
-                        <TableRow className="hover:bg-transparent border-border/40">
-                            <TableHead className="font-black text-[10px] uppercase tracking-widest py-4">Fecha</TableHead>
-                            <TableHead className="font-black text-[10px] uppercase tracking-widest py-4">Tipo</TableHead>
-                            <TableHead className="font-black text-[10px] uppercase tracking-widest py-4">Concepto / Responsable</TableHead>
-                            <TableHead className="font-black text-[10px] uppercase tracking-widest py-4">Método / Caja</TableHead>
-                            <TableHead className="font-black text-[10px] uppercase tracking-widest py-4 text-right">Monto</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-40 text-center">
-                                    <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary opacity-20" />
-                                </TableCell>
+                <div className="overflow-x-auto w-full">
+                    <Table>
+                        <TableHeader className="bg-muted/50">
+                            <TableRow className="hover:bg-transparent border-border/40">
+                                <TableHead className="font-black text-[10px] uppercase tracking-widest py-4 whitespace-nowrap">Fecha</TableHead>
+                                <TableHead className="font-black text-[10px] uppercase tracking-widest py-4 whitespace-nowrap">Tipo</TableHead>
+                                <TableHead className="font-black text-[10px] uppercase tracking-widest py-4 whitespace-nowrap">Concepto / Responsable</TableHead>
+                                <TableHead className="font-black text-[10px] uppercase tracking-widest py-4 whitespace-nowrap">Método / Caja</TableHead>
+                                <TableHead className="font-black text-[10px] uppercase tracking-widest py-4 text-right whitespace-nowrap">Monto</TableHead>
                             </TableRow>
-                        ) : movements.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={5} className="h-40 text-center text-muted-foreground italic">
-                                    No se encontraron movimientos.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            movements.map((move) => (
-                                <TableRow key={move.id_cash_movement} className="hover:bg-muted/20 transition-colors border-border/40 group">
-                                    <TableCell className="py-4">
-                                        <div className="flex flex-col">
-                                            <span className="font-black text-sm text-foreground/80">{format(new Date(move.created_at), 'dd/MM/yyyy')}</span>
-                                            <span className="text-[10px] font-bold text-muted-foreground">{format(new Date(move.created_at), 'HH:mm')}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge className={`uppercase text-[10px] font-black tracking-widest h-6 px-2 shadow-none rounded-md ${
-                                            move.tipo === 'ingreso' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'bg-rose-100 text-rose-700 hover:bg-rose-100'
-                                        }`}>
-                                            {move.tipo === 'ingreso' ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                                            {move.tipo}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col max-w-[300px]">
-                                            <div className="flex items-center gap-2">
-                                                {(() => {
-                                                    const iconName = move.expense_category_icon || move.expense_category_metadata?.icon || 'Tag';
-                                                    const IconComponent = ICON_MAP[iconName] || Tag;
-                                                    return <IconComponent className="h-3 w-3 text-muted-foreground" />;
-                                                })()}
-                                                <span className="font-bold text-sm truncate">
-                                                    {move.expense_category_nombre || (move.tipo === 'ingreso' ? 'Venta de Productos' : 'Sin categoría')}
-                                                </span>
-                                            </div>
-                                            <span className="text-xs text-muted-foreground flex items-center gap-1 group-hover:text-foreground transition-colors italic">
-                                                {move.nota || move.usuario_nombre}
-                                            </span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-xs uppercase text-foreground/70">{move.metodo}</span>
-                                            <span className="text-[10px] font-bold text-muted-foreground/60">{move.cash_box_nombre}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <span className={`text-base font-black ${
-                                            move.tipo === 'ingreso' ? 'text-emerald-600' : 'text-rose-600'
-                                        }`}>
-                                            {move.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(move.monto)}
-                                        </span>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-40 text-center">
+                                        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary opacity-20" />
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
+                            ) : movements.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-40 text-center text-muted-foreground italic">
+                                        No se encontraron movimientos.
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                movements.map((move) => (
+                                    <TableRow key={move.id_cash_movement} className="hover:bg-muted/20 transition-colors border-border/40 group">
+                                        <TableCell className="py-4">
+                                            <div className="flex flex-col">
+                                                <span className="font-black text-sm text-foreground/80">{format(new Date(move.created_at), 'dd/MM/yyyy')}</span>
+                                                <span className="text-[10px] font-bold text-muted-foreground">{format(new Date(move.created_at), 'HH:mm')}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={`uppercase text-[10px] font-black tracking-widest h-6 px-2 shadow-none rounded-md ${
+                                                move.tipo === 'ingreso' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' : 'bg-rose-100 text-rose-700 hover:bg-rose-100'
+                                            }`}>
+                                                {move.tipo === 'ingreso' ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
+                                                {move.tipo}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col max-w-[300px]">
+                                                <div className="flex items-center gap-2">
+                                                    {(() => {
+                                                        const iconName = move.expense_category_icon || move.expense_category_metadata?.icon || 'Tag';
+                                                        const IconComponent = ICON_MAP[iconName] || Tag;
+                                                        return <IconComponent className="h-3 w-3 text-muted-foreground" />;
+                                                    })()}
+                                                    <span className="font-bold text-sm truncate">
+                                                        {move.expense_category_nombre || (move.tipo === 'ingreso' ? 'Venta de Productos' : 'Sin categoría')}
+                                                    </span>
+                                                </div>
+                                                <span className="text-xs text-muted-foreground flex items-center gap-1 group-hover:text-foreground transition-colors italic">
+                                                    {move.nota || move.usuario_nombre}
+                                                </span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-xs uppercase text-foreground/70">{move.metodo}</span>
+                                                <span className="text-[10px] font-bold text-muted-foreground/60">{move.cash_box_nombre}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <span className={`text-base font-black ${
+                                                move.tipo === 'ingreso' ? 'text-emerald-600' : 'text-rose-600'
+                                            }`}>
+                                                {move.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(move.monto)}
+                                            </span>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             {/* Simple Pagination */}
