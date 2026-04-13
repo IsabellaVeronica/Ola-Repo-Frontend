@@ -5,49 +5,77 @@ const isActive = (path: string) => {
     return pathname === path || pathname === path + '/';
 };
 ---
-<aside class="w-64 p-4 bg-card/80 backdrop-blur-sm border-r border-border">
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden"></div>
+
+<aside 
+    id="dashboard-sidebar" 
+    class="fixed inset-y-0 left-0 w-64 p-4 bg-card/95 backdrop-blur-md border-r border-border z-50 transform -translate-x-full transition-transform duration-300 lg:relative lg:translate-x-0 lg:z-0 lg:bg-card/80"
+>
+    <div class="flex items-center justify-between mb-6 lg:hidden">
+        <span class="font-bold text-lg">Menú</span>
+        <button id="close-sidebar" class="p-2 hover:bg-secondary rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+    </div>
+
     <nav>
         <ul class="space-y-1">
             <li>
-                <a href="/dashboard" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Principal
                 </a>
             </li>
             <li>
-                <a href="/dashboard/users" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/users') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/users" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/users') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Usuarios
                 </a>
             </li>
             <li>
-                <a href="/dashboard/products" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/products') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/products" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/products') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Inventario
                 </a>
             </li>
             <li>
-                <a href="/dashboard/orders" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/orders') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/orders" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/orders') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Pedidos
                 </a>
             </li>
             <li>
-                <a href="/dashboard/ventas" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/ventas') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/ventas" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/ventas') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Ventas
                 </a>
             </li>
             <li>
-                <a href="/dashboard/dinero" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/dinero') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/dinero" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/dinero') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Dinero
                 </a>
             </li>
             <li>
-                <a href="/dashboard/audit" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/audit') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/audit" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/audit') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Auditoría
                 </a>
             </li>
             <li>
-                <a href="/dashboard/settings" class={`block px-4 py-2 rounded-md transition-colors ${isActive('/dashboard/settings') ? 'bg-secondary text-secondary-foreground font-bold' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/settings" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/settings') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
                     Configuración
                 </a>
             </li>
         </ul>
     </nav>
 </aside>
+
+<script>
+    const closeBtn = document.getElementById('close-sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const sidebar = document.getElementById('dashboard-sidebar');
+
+    const closeSidebar = () => {
+        if (sidebar && overlay) {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+        }
+    };
+
+    closeBtn?.addEventListener('click', closeSidebar);
+    overlay?.addEventListener('click', closeSidebar);
+</script>

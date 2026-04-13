@@ -1,18 +1,32 @@
-<header class="flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border">
-    <h1 class="text-2xl font-bold text-foreground">Panel Administrativo</h1>
-    <button id="logout-button" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80">Cerrar Sesión</button>
+<header class="flex items-center justify-between p-4 bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-40">
+    <div class="flex items-center gap-4">
+        <button id="mobile-menu-toggle" class="lg:hidden p-2 hover:bg-secondary rounded-md" aria-label="Abrir menú">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+        </button>
+        <h1 class="text-xl md:text-2xl font-bold text-foreground truncate">Panel Administrativo</h1>
+    </div>
+    <button id="logout-button" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 text-sm whitespace-nowrap">Cerrar Sesión</button>
 </header>
 
 <script>
     const logoutButton = document.getElementById('logout-button');
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            const sidebar = document.getElementById('dashboard-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            }
+        });
+    }
 
     if (logoutButton) {
         logoutButton.addEventListener('click', () => {
-            // Remove the auth token cookie
             document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-            // Remove user data from localStorage
             localStorage.removeItem('user');
-            // Redirect to the login page
             window.location.href = '/login';
         });
     }
