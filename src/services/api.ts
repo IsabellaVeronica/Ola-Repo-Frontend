@@ -36,5 +36,10 @@ export const API_ENDPOINTS = {
     STOCK: (id: string | number) => `/api/inventario/stock/${id}`,
     IMPORT_TEMPLATE: `/api/inventario/import/template`,
     IMPORT_EXCEL: `/api/inventario/import/excel`,
+    BULK_CREATE: `/api/inventario/bulk/productos`,
+    SETUP_PRODUCT: (id: string | number) => `/api/inventario/productos/${id}/setup`,
+    UPDATE_SETUP: (id: string | number) => `/api/inventario/productos/${id}/marca`,
+    ADD_VARIANT: (id: string | number) => `/api/inventario/productos/${id}/variantes`,
+    BULK_IMAGES: (id: string | number) => `/api/products/${id}/images`,
   }
 }
