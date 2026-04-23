@@ -54,7 +54,7 @@ export const ProductGrid: React.FC = () => {
         const catsList = getList(catsData);
         if (catsList.length > 0) {
           setCategories([{ id: 'all', name: 'Todos' }, ...catsList.map((c: any) => ({
-            id: c.id_categoria || c.id || String(c),
+            id: String(c.id_categoria || c.id || c),
             name: c.nombre || c.name || String(c)
           }))]);
         }
@@ -62,7 +62,7 @@ export const ProductGrid: React.FC = () => {
         const brandsList = getList(brandsData);
         if (brandsList.length > 0) {
           setBrands([{ id: 'all', name: 'Todas' }, ...brandsList.map((b: any) => ({
-            id: b.id_marca || b.id || String(b),
+            id: String(b.id_marca || b.id || b),
             name: b.nombre || b.name || String(b)
           }))]);
         }
