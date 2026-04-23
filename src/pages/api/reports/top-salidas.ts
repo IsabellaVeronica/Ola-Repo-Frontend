@@ -8,14 +8,16 @@ export const GET: APIRoute = async ({ cookies }) => {
         return new Response(JSON.stringify({ error: 'Server misconfiguration' }), { status: 500 });
     }
 
-    if (!token) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
-    }
+    // For public top sellers, we allow access without token if it's a GET request
+    // The backend might still require a token if it's not configured as public, 
+    // but we'll try to use a system token or just forward it.
+    // However, the cleanest way is often to have a public mirror in the backend. 
+    // For now, let's just make the proxy allow it.
 
     try {
         const response = await fetch(`${externalApiBase}/reports/inventario/top-salidas`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
+                ...(token && { 'Authorization': `Bearer ${token}` }),
                 'Content-Type': 'application/json'
             }
         });

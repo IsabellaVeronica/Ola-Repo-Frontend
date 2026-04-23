@@ -16,37 +16,56 @@ export const TopPerfumes: React.FC = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<number | undefined>(undefined);
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchTopProducts = async () => {
       setLoading(true);
       try {
-        // Construct Query Params. 
-        // We assume the backend might eventually support sort=salidas for public products.
-        // For now, it will fetch the normal products list but limited to 3.
-        const url = `${API_ENDPOINTS.CATALOG.PRODUCTS}?limit=3&sort=salidas&dir=desc`;
-        const response = await FetchData<any>(url, 'GET');
+        // Use the new public top-sellers endpoint
+        const response = await fetch('/api/catalog/top-sellers?limit=3');
+        const data = await response.json();
+        const rawProducts = Array.isArray(data) ? data : (data.data || []);
 
-        if (response.message === 'Tienda cerrada') {
-          setProducts([]);
-          return;
+        const apiBase = import.meta.env.PUBLIC_EXTERNAL_API_BASE?.replace('/api', '') || '';
+
+        if (rawProducts.length > 0) {
+          const mappedProducts: Product[] = rawProducts.slice(0, 3).map((p: any) => {
+            let imgUrl = p.imagen_principal || p.imagen || p.image || '';
+            
+            // If the URL is relative, prefix it with the backend base
+            if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('blob:')) {
+              imgUrl = `${apiBase}/${imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl}`;
+            }
+
+            return {
+              id: String(p.id_producto || p.id),
+              name: p.nombre || p.name,
+              price: Number(p.min_price) || Number(p.precio) || 0,
+              image: imgUrl || 'https://placehold.co/400x400/261633/FFF5F7?text=Perfume',
+              description: p.descripcion || p.description || '',
+              category: p.categoria || p.category || 'General',
+              brand: p.marca || p.brand || 'Marca',
+              categoryId: String(p.id_categoria || ''),
+              brandId: String(p.id_marca || '')
+            };
+          });
+          setProducts(mappedProducts);
+        } else {
+          // Fallback if no sales yet: bring 3 newest from normal catalog
+          const fallbackRes = await FetchData<any>(`${API_ENDPOINTS.CATALOG.PRODUCTS}?limit=3`, 'GET');
+          const fallbackData = fallbackRes.data || [];
+          const fillers: Product[] = fallbackData.map((p: any) => ({
+            id: String(p.id_producto),
+            name: p.nombre,
+            price: Number(p.min_price) || Number(p.precio) || 0,
+            image: p.imagen_principal || 'https://placehold.co/400x400/261633/FFF5F7?text=Perfume',
+            description: p.descripcion || '',
+            category: p.categoria || 'General',
+            brand: p.marca || 'Marca',
+            categoryId: String(p.id_categoria),
+            brandId: String(p.id_marca)
+          }));
+          setProducts(fillers);
         }
-
-        const rawProducts = response.data || [];
-
-        // Map to Product Interface
-        const mappedProducts: Product[] = rawProducts.slice(0, 3).map((p: any) => ({
-          id: Number(p.id_producto),
-          name: p.nombre,
-          price: Number(p.min_price) || Number(p.precio) || 0,
-          image: p.imagen_principal || 'https://placehold.co/400x400/261633/FFF5F7?text=Perfume', // Placeholder
-          description: p.descripcion || '',
-          category: p.categoria || 'General',
-          brand: p.marca || 'Marca',
-          categoryId: String(p.id_categoria),
-          brandId: String(p.id_marca)
-        }));
-
-        setProducts(mappedProducts);
       } catch (error) {
         console.error("Failed to fetch top products", error);
       } finally {

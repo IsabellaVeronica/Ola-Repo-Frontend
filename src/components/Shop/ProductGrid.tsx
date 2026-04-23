@@ -159,100 +159,98 @@ export const ProductGrid: React.FC = () => {
       {/* Filters Container */}
       <div className="flex flex-col gap-6 max-w-6xl mx-auto bg-card/50 p-6 rounded-xl border border-border">
 
-        {/* Row 1: Search & Price & Sort */}
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          {/* Search Bar */}
-          <div className="relative w-full md:flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Input
-              type="text"
-              placeholder="Buscar productos, categorías..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-accent w-full"
-            />
+        {/* Row 1: Search Bar (Main) */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+          <Input
+            type="text"
+            placeholder="Buscar productos, categorías..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 h-12 bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-accent w-full text-lg"
+          />
+        </div>
+
+        {/* Row 2: Multi-Filters */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          {/* Category Select */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Categoría</label>
+            <select
+              value={selectedCategory.id}
+              onChange={(e) => {
+                const cat = categories.find(c => c.id === e.target.value);
+                if (cat) setSelectedCategory(cat);
+              }}
+              className="w-full bg-background border border-input text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+            >
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Brand Select */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Marca</label>
+            <select
+              value={selectedBrand.id}
+              onChange={(e) => {
+                const brd = brands.find(b => b.id === e.target.value);
+                if (brd) setSelectedBrand(brd);
+              }}
+              className="w-full bg-background border border-input text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+            >
+              {brands.map(brand => (
+                <option key={brand.id} value={brand.id}>{brand.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Price Range */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">Precio:</span>
-            <Input
-              type="number"
-              placeholder="Min"
-              value={priceRange.min}
-              onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) }))}
-              className="w-20 bg-background border-input text-foreground"
-            />
-            <span className="text-muted-foreground">-</span>
-            <Input
-              type="number"
-              placeholder="Max"
-              value={priceRange.max}
-              onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))}
-              className="w-20 bg-background border-input text-foreground"
-            />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Rango de Precio</label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                placeholder="Min"
+                value={priceRange.min}
+                onChange={(e) => setPriceRange(prev => ({ ...prev, min: Number(e.target.value) }))}
+                className="w-full bg-background border-input text-foreground h-10"
+              />
+              <span className="text-muted-foreground">-</span>
+              <Input
+                type="number"
+                placeholder="Max"
+                value={priceRange.max}
+                onChange={(e) => setPriceRange(prev => ({ ...prev, max: Number(e.target.value) }))}
+                className="w-full bg-background border-input text-foreground h-10"
+              />
+            </div>
           </div>
 
-          {/* Order By */}
-          <div className="w-full md:w-auto">
+          {/* Sort By */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Ordenar por</label>
             <select
               value={orderBy}
               onChange={(e) => setOrderBy(e.target.value)}
-              className="w-full md:w-48 bg-background border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full bg-background border border-input text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
             >
-              <option value="default">Ordenar por...</option>
+              <option value="default">Seleccionar...</option>
               <option value="price-asc">Precio: Menor a Mayor</option>
               <option value="price-desc">Precio: Mayor a Menor</option>
               <option value="name-asc">Nombre: A-Z</option>
               <option value="name-desc">Nombre: Z-A</option>
             </select>
           </div>
-        </div>
 
-        {/* Row 2: Categories & Brands */}
-        <div className="flex flex-col md:flex-row gap-4 justify-between">
-          {/* Categories */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Categoría</span>
-            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-              {categories.map(category => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap border ${selectedCategory.id === category.id
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-transparent text-muted-foreground border-border hover:border-primary'
-                    }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Brands */}
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Marca</span>
-            <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-              {brands.map(brand => (
-                <button
-                  key={brand.id}
-                  onClick={() => setSelectedBrand(brand)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap border ${selectedBrand.id === brand.id
-                    ? 'bg-secondary text-secondary-foreground border-secondary'
-                    : 'bg-transparent text-muted-foreground border-border hover:border-secondary'
-                    }`}
-                >
-                  {brand.name}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
         {loading || settingsLoading ? (
           <div className="col-span-full text-center py-20 text-muted-foreground animate-pulse font-medium">Buscando productos...</div>
         ) : storeClosed ? (

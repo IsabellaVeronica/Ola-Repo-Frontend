@@ -43,7 +43,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
         <img
           src={product.image}
           alt={product.name}
-          className="absolute inset-0 w-full h-full object-contain p-6 z-10 transition-all duration-700 ease-out drop-shadow-xl mix-blend-darken dark:mix-blend-normal"
+          className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6 z-10 transition-all duration-700 ease-out drop-shadow-xl mix-blend-darken dark:mix-blend-normal"
           style={{ transform: hovered ? 'scale(1.08) translateY(-6px)' : 'scale(1) translateY(0)' }}
         />
 
@@ -99,7 +99,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
         </div>
 
         <h3
-          className="font-display text-xl md:text-2xl text-foreground leading-tight font-light transition-colors duration-300"
+          className="font-display text-lg md:text-2xl text-foreground leading-tight font-light transition-colors duration-300"
           style={{ color: hovered ? 'hsl(var(--secondary))' : undefined }}
         >
           {product.name}
