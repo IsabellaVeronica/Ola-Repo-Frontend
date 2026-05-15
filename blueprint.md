@@ -30,7 +30,9 @@ This project is a static-first web application built with Astro.js. It is design
 - **Data Validation**: Checkout requires Cédula, Name, Email, and Phone. Conflict resolution (409) is implemented for overlapping contact info.
 
 ## Recent Changes
+- **Enriquecimiento de Marcas en Catálogo**: Eliminado el texto estático "GENERIC" y habilitado el mapeo dinámico de nombres de marcas utilizando los metadatos globales cuando el backend no proporciona el string directamente.
 - **Navegación Rápida con Enter**: Implementado sistema de navegación secuencial por teclado (Enter) en formularios bulk y editor de cola.
 - **Edición en Cola Directa**: Se habilitó la edición de precio, barras y stock directamente en la cola, con persistencia automática al avanzar.
 - **Taxonomías "al vuelo"**: Añadidos botones y diálogos para crear nuevas Categorías y Marcas sin salir del flujo de carga masiva.
 - **Optimización de UX**: Reestructuración de componentes para mejorar la estabilidad y disponibilidad de herramientas globales.
+

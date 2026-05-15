@@ -42,8 +42,8 @@ export const TopPerfumes: React.FC = () => {
               price: Number(p.min_price) || Number(p.precio) || 0,
               image: imgUrl || 'https://placehold.co/400x400/261633/FFF5F7?text=Perfume',
               description: p.descripcion || p.description || '',
-              category: p.categoria || p.category || 'General',
-              brand: p.marca || p.brand || 'Marca',
+              category: p.categoria || p.category || '',
+              brand: p.marca || p.brand || '',
               categoryId: String(p.id_categoria || ''),
               brandId: String(p.id_marca || '')
             };
@@ -59,8 +59,8 @@ export const TopPerfumes: React.FC = () => {
             price: Number(p.min_price) || Number(p.precio) || 0,
             image: p.imagen_principal || 'https://placehold.co/400x400/261633/FFF5F7?text=Perfume',
             description: p.descripcion || '',
-            category: p.categoria || 'General',
-            brand: p.marca || 'Marca',
+            category: p.categoria || '',
+            brand: p.marca || '',
             categoryId: String(p.id_categoria),
             brandId: String(p.id_marca)
           }));

@@ -16,9 +16,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
     ? product.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : Math.round(product.price).toLocaleString();
 
-  const brandLabel = product.brand && product.brand !== 'Marca'
-    ? product.brand
-    : (product.category !== 'General' ? product.category : 'Exclusivo');
+  const brandLabel = product.brand || product.category || 'Exclusivo';
 
   return (
     <div

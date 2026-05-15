@@ -115,15 +115,15 @@ export const ProductGrid: React.FC = () => {
 
         // Map to Product Interface
         const mappedProducts: Product[] = rawProducts.map((p: any) => ({
-          id: Number(p.id_producto),
+          id: String(p.id_producto),
           name: p.nombre,
           price: Number(p.min_price) || Number(p.precio) || 0,
           image: p.imagen_principal || 'https://placehold.co/400x400/261633/FFF5F7?text=Producto', // Placeholder
           description: p.descripcion || '',
-          category: p.categoria || 'General',
-          brand: p.marca || 'Generic',
-          categoryId: String(p.id_categoria), // Mapped from Proxy Injection
-          brandId: String(p.id_marca)         // Mapped from Proxy Injection
+          category: p.categoria || '',
+          brand: p.marca || '',
+          categoryId: String(p.id_categoria),
+          brandId: String(p.id_marca)
         }));
 
         setProducts(mappedProducts);
@@ -142,16 +142,25 @@ export const ProductGrid: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm, orderBy]);
 
+  // Enrich products with Meta names if missing
+  const enrichedProducts = useMemo(() => {
+    return products.map(p => {
+      const brandName = p.brand || brands.find(b => b.id === p.brandId)?.name || '';
+      const catName = p.category || categories.find(c => c.id === p.categoryId)?.name || '';
+      return { ...p, brand: brandName, category: catName };
+    });
+  }, [products, brands, categories]);
+
   // Client-Side Filter for Categories, Brands
   const filteredProducts = useMemo(() => {
-    return products.filter(product => {
+    return enrichedProducts.filter(product => {
       const matchCategory = selectedCategory.id === 'all' || product.categoryId === selectedCategory.id;
       const matchBrand = selectedBrand.id === 'all' || product.brandId === selectedBrand.id;
       const matchPrice = product.price >= priceRange.min && product.price <= priceRange.max;
 
       return matchCategory && matchBrand && matchPrice;
     });
-  }, [products, selectedCategory, selectedBrand, priceRange]);
+  }, [enrichedProducts, selectedCategory, selectedBrand, priceRange]);
 
 
   return (
