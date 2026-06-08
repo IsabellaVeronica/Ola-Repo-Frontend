@@ -85,6 +85,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
                 stock_actual: item.stock,
                 total_salidas_periodo: totalSalidas,
                 periodo_dias: days,
+                min_stock: item.min_stock || parseInt(threshold) || 10,
             };
         });
 

@@ -7,9 +7,12 @@ import {
     Plus, Trash2, CheckCircle2, Package, Layers, 
     ArrowRight, ArrowLeft, Loader2, UploadCloud, 
     X, ImageIcon, SkipForward, LayoutPanelTop,
-    AlertCircle, Save
+    AlertCircle, Save, FileSpreadsheet, Download,
+    FileIcon, ChevronRight, AlertTriangle
 } from 'lucide-react';
 import type { Product, Category, Brand } from '@/types';
+
+
 
 const PREDEFINED_ATTRIBUTES = [
     "Talla",
@@ -49,9 +52,20 @@ interface SessionData {
     createdAt: string;
 }
 
-export const BulkCreateProducts = () => {
+export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () => void }) => {
     const [step, setStep] = useState<'input' | 'summary' | 'editor' | 'fin'>('input');
     const [loading, setLoading] = useState(false);
+
+    // Inline Excel Uploader state
+    const [file, setFile] = useState<File | null>(null);
+    const [importErrors, setImportErrors] = useState<any[]>([]);
+    const [generalError, setGeneralError] = useState<string | null>(null);
+    const [importSummary, setImportSummary] = useState<any | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Toggle for manual quick load vs Excel loader
+    const [useManualLoad, setUseManualLoad] = useState(false);
+
     
     // Step 1: Input state
     const [inputs, setInputs] = useState<BulkProductInput[]>([{ nombre: '', descripcion: '' }]);
@@ -160,7 +174,6 @@ export const BulkCreateProducts = () => {
             try {
                 const data = JSON.parse(saved);
                 setSession(data);
-                setStep('summary');
             } catch (e) {
                 localStorage.removeItem(STORAGE_KEY);
             }
@@ -473,65 +486,372 @@ export const BulkCreateProducts = () => {
         }
     };
 
-    // Helper p/ renderizado de pasos
+    const handleDownloadTemplate = async () => {
+        try {
+            const blob = await FetchData<Blob>(API_ENDPOINTS.INVENTORY.IMPORT_TEMPLATE, 'GET', {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'plantilla_inventario.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error('Failed to download template', err);
+            setGeneralError('No se pudo descargar la plantilla.');
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            const name = selectedFile.name.toLowerCase();
+            if (!name.endsWith('.xlsx') && !name.endsWith('.xls') && !name.endsWith('.csv')) {
+                setGeneralError('Formatos soportados: .xlsx, .xls, .csv');
+                return;
+            }
+            setFile(selectedFile);
+            setGeneralError(null);
+            setImportSummary(null);
+            setImportErrors([]);
+        }
+    };
+
+    const handleImport = async () => {
+        if (!file) return;
+
+        setLoading(true);
+        setImportSummary(null);
+        setImportErrors([]);
+        setGeneralError(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await FetchData<any>(API_ENDPOINTS.INVENTORY.IMPORT_EXCEL, 'POST', {
+                body: formData
+            });
+
+            setImportSummary(response.summary);
+            setFile(null);
+        } catch (err: any) {
+            if (err instanceof HttpError) {
+                if (err.status === 400 && err.data?.errors) {
+                    setImportErrors(err.data.errors);
+                } else {
+                    setGeneralError(err.message || 'Ocurrió un error inesperado al procesar.');
+                }
+            } else {
+                setGeneralError('Error de conexión con el servidor.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDiscardQueue = async () => {
+        if (!session) return;
+        if (!confirm("¿Estás seguro que deseas descartar esta carga? Los productos creados en esta sesión serán eliminados permanentemente y no se ingresarán al catálogo.")) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const deletePromises = session.productosIds.map(id => 
+                FetchData(API_ENDPOINTS.PRODUCTS.DELETE(id), 'DELETE')
+            );
+            await Promise.all(deletePromises);
+            
+            localStorage.removeItem(STORAGE_KEY);
+            setSession(null);
+            setStep('input');
+        } catch (e: any) {
+            alert("Error al descartar la carga: " + (e.message || e));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const renderStepContent = () => {
-        if (step === 'input') return (
-            <div className="max-w-4xl mx-auto p-6 space-y-8 bg-card rounded-2xl border shadow-sm">
-                <div className="space-y-2">
-                    <h2 className="text-2xl font-bold tracking-tight">Carga Rápida de Productos</h2>
-                    <p className="text-muted-foreground">Ingresa los nombres y descripciones. Completaremos los detalles en el siguiente paso.</p>
-                </div>
-
-                <div className="space-y-4">
-                    {inputs.map((input, idx) => (
-                        <div key={idx} className="flex gap-4 items-start group">
-                            <div className="flex-none pt-2">
-                                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold">
-                                    {idx + 1}
-                                </span>
+        if (step === 'input') {
+            return (
+                <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300">
+                    {/* CASE 1: Active Queue Session banner at the top (non-blocking) */}
+                    {session && (
+                        <div className="bg-card p-6 rounded-2xl border border-amber-500/20 shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-card to-amber-500/5">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-amber-500/10 text-amber-600 rounded-xl mt-0.5 shrink-0">
+                                    <AlertTriangle className="h-5 w-5" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="font-bold text-foreground">Carga Pendiente Detectada</h3>
+                                    <p className="text-xs text-muted-foreground leading-relaxed font-medium">
+                                        Tienes una sesión de carga masiva anterior con {session.productosIds.length} productos pendientes de configurar en la cola.
+                                    </p>
+                                </div>
                             </div>
-                            <div className="flex-1 space-y-3 bulk-row">
-                                <Input 
-                                    placeholder="Nombre del producto (obligatorio)" 
-                                    value={input.nombre}
-                                    onChange={(e) => handleInputChange(idx, 'nombre', e.target.value)}
-                                    className="font-semibold nombre"
-                                />
-                                <Input 
-                                    placeholder="Descripción corta (opcional)" 
-                                    value={input.descripcion}
-                                    onChange={(e) => handleInputChange(idx, 'descripcion', e.target.value)}
-                                    className="text-sm descripcion"
-                                />
+                            <div className="flex gap-2 w-full md:w-auto">
+                                <Button 
+                                    variant="outline" 
+                                    onClick={handleDiscardQueue} 
+                                    className="flex-1 md:flex-none text-destructive hover:bg-destructive/10 border-destructive/20 text-xs font-semibold h-9 px-3"
+                                    disabled={loading}
+                                >
+                                    {loading ? <Loader2 className="h-3 w-3 animate-spin mr-1.5" /> : <Trash2 className="h-3.5 w-3.5 mr-1.5" />}
+                                    Descartar
+                                </Button>
+                                <Button 
+                                    onClick={startQueueEditor} 
+                                    className="flex-1 md:flex-none gap-1.5 text-xs font-bold h-9 px-4"
+                                    disabled={loading}
+                                >
+                                    Continuar Edición
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                </Button>
                             </div>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => removeRow(idx)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
                         </div>
-                    ))}
-                </div>
+                    )}
 
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                    <Button variant="outline" onClick={addRow} className="flex-1 gap-2 border-dashed">
-                        <Plus className="h-4 w-4" /> Agregar otro producto
-                    </Button>
-                    <div className="flex gap-2 flex-1">
-                        <Button variant="ghost" className="flex-1" onClick={() => setInputs([{ nombre: '', descripcion: '' }])}>
-                            Limpiar
-                        </Button>
-                        <Button className="flex-1 gap-2 font-bold" onClick={handleBulkCreate} disabled={loading}>
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Iniciar Carga
-                        </Button>
-                    </div>
+                    {/* CASE 2: Excel Import completed successfully, display summary */}
+                    {importSummary ? (
+                        <div className="max-w-2xl mx-auto p-12 text-center space-y-8 bg-card rounded-2xl border shadow-lg animate-in zoom-in-95">
+                            <div className="flex justify-center">
+                                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
+                                    <CheckCircle2 className="h-8 w-8 text-green-500" />
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <h2 className="text-2xl font-black">¡Importación Exitosa!</h2>
+                                <p className="text-muted-foreground text-sm">Los productos y variantes se cargaron correctamente en el sistema.</p>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="p-4 bg-muted/40 rounded-xl text-center border">
+                                    <p className="text-xs text-muted-foreground font-semibold uppercase tracking-tighter">Procesadas</p>
+                                    <p className="text-xl font-black">{importSummary.filas_procesadas}</p>
+                                </div>
+                                <div className="p-4 bg-muted/40 rounded-xl text-center border">
+                                    <p className="text-xs text-muted-foreground font-semibold uppercase tracking-tighter">Variantes</p>
+                                    <p className="text-xl font-black text-primary">{importSummary.variantes_creadas}</p>
+                                </div>
+                                <div className="p-4 bg-muted/40 rounded-xl text-center border">
+                                    <p className="text-xs text-muted-foreground font-semibold uppercase tracking-tighter">Unidades</p>
+                                    <p className="text-xl font-black text-emerald-600">{importSummary.unidades_stock_inicial}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 pt-2">
+                                <Button variant="outline" className="flex-1" onClick={() => setImportSummary(null)}>
+                                    Cargar otro archivo
+                                </Button>
+                                <Button className="flex-1 font-bold text-base h-11" onClick={onImportSuccess}>
+                                    Ver en Inventario
+                                </Button>
+                            </div>
+                        </div>
+                    ) : useManualLoad ? (
+                        /* CASE 3: Quick Manual Load Form (Toggleable) */
+                        <div className="space-y-6 animate-in fade-in duration-200">
+                            <div className="flex justify-between items-center bg-card p-4 rounded-xl border">
+                                <span className="text-sm font-medium text-muted-foreground">Estás en modo de carga manual rápida</span>
+                                <Button variant="ghost" size="sm" onClick={() => setUseManualLoad(false)} className="gap-2 font-bold text-primary hover:bg-primary/10">
+                                    <ArrowLeft className="h-4 w-4" /> Volver a Carga Jerárquica
+                                </Button>
+                            </div>
+
+                            <div className="p-6 space-y-8 bg-card rounded-2xl border shadow-sm">
+                                <div className="space-y-2">
+                                    <h2 className="text-2xl font-bold tracking-tight">Carga Rápida Manual</h2>
+                                    <p className="text-muted-foreground">Ingresa los nombres y descripciones. Completaremos los detalles de cada uno en la cola de edición.</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {inputs.map((input, idx) => (
+                                        <div key={idx} className="flex gap-4 items-start group">
+                                            <div className="flex-none pt-2">
+                                                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                                                    {idx + 1}
+                                                </span>
+                                            </div>
+                                            <div className="flex-1 space-y-3 bulk-row">
+                                                <Input 
+                                                    placeholder="Nombre del producto (obligatorio)" 
+                                                    value={input.nombre}
+                                                    onChange={(e) => handleInputChange(idx, 'nombre', e.target.value)}
+                                                    className="font-semibold nombre"
+                                                />
+                                                <Input 
+                                                    placeholder="Descripción corta (opcional)" 
+                                                    value={input.descripcion}
+                                                    onChange={(e) => handleInputChange(idx, 'descripcion', e.target.value)}
+                                                    className="text-sm descripcion"
+                                                />
+                                            </div>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => removeRow(idx)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                                    <Button variant="outline" onClick={addRow} className="flex-1 gap-2 border-dashed">
+                                        <Plus className="h-4 w-4" /> Agregar otro producto
+                                    </Button>
+                                    <div className="flex gap-2 flex-1">
+                                        <Button variant="ghost" className="flex-1" onClick={() => setInputs([{ nombre: '', descripcion: '' }])}>
+                                            Limpiar
+                                        </Button>
+                                        <Button className="flex-1 gap-2 font-bold" onClick={handleBulkCreate} disabled={loading}>
+                                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                            Iniciar Carga
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* CASE 4: Custom Hierarchical Excel Uploader (Main Screen) */
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <div className="bg-card p-10 rounded-3xl border shadow-lg flex flex-col items-center text-center space-y-8 max-w-2xl mx-auto">
+                                {/* Theme-consistent circular icon container using secondary color */}
+                                <div className="w-16 h-16 rounded-full bg-secondary/15 flex items-center justify-center text-secondary">
+                                    <FileSpreadsheet className="h-8 w-8 text-secondary" />
+                                </div>
+
+                                {/* Title & Subtitle */}
+                                <div className="space-y-3">
+                                    <h2 className="text-3xl font-extrabold tracking-tight text-foreground">Carga Masiva Jerárquica</h2>
+                                    <p className="text-muted-foreground text-sm max-w-md mx-auto leading-relaxed">
+                                        Sube tu inventario para procesar jerarquías. Si dejas la celda de nombre vacía, el sistema asumirá que es otra variante del producto anterior.
+                                    </p>
+                                </div>
+
+                                {/* Template Download Button */}
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={handleDownloadTemplate} 
+                                    className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 border-emerald-500/30 hover:bg-emerald-50/50 gap-2 font-medium rounded-xl h-9"
+                                >
+                                    <Download className="h-4 w-4" />
+                                    Descargar Plantilla Excel
+                                </Button>
+
+                                {/* Drag and Drop Zone */}
+                                <div className="w-full">
+                                    {!file ? (
+                                        <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-border rounded-2xl cursor-pointer bg-card hover:bg-secondary/5 hover:border-secondary/50 transition-all duration-200">
+                                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                <UploadCloud className="w-12 h-12 mb-3 text-secondary" />
+                                                <p className="mb-1 text-base text-foreground font-semibold">Haz clic para seleccionar o arrastra un archivo</p>
+                                                <p className="text-xs text-muted-foreground">Formatos soportados: .xlsx, .xls, .csv</p>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                className="hidden" 
+                                                accept=".xlsx,.xls,.csv"
+                                                onChange={handleFileChange}
+                                                disabled={loading}
+                                            />
+                                        </label>
+                                    ) : (
+                                        <div className="p-5 rounded-2xl border-2 border-secondary/20 bg-secondary/5 flex items-center gap-3">
+                                            <div className="p-3 bg-secondary/15 text-secondary rounded-xl">
+                                                <FileIcon className="h-8 w-8 text-secondary" />
+                                            </div>
+                                            <div className="flex-1 min-w-0 text-left">
+                                                <p className="text-sm font-bold truncate">{file.name}</p>
+                                                <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="hover:bg-secondary/25 text-muted-foreground" onClick={() => setFile(null)} disabled={loading}>
+                                                <X className="h-5 w-5" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Error and validation messages */}
+                                {importErrors.length > 0 && (
+                                    <div className="w-full space-y-2 max-h-40 overflow-y-auto pr-2 text-left">
+                                        <div className="flex items-center gap-2 text-amber-500 mb-2 sticky top-0 bg-card py-1">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <h4 className="text-xs font-bold">Errores en el archivo</h4>
+                                        </div>
+                                        {importErrors.map((err, i) => (
+                                            <div key={i} className="text-[11px] p-2 rounded border border-red-500/10 bg-red-500/5 flex gap-2">
+                                                <span className="font-bold text-red-500 shrink-0">Fila {err.fila}</span>
+                                                <span className="text-foreground/80">{err.error}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {generalError && (
+                                    <div className="w-full p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-xs text-left flex items-center gap-2">
+                                        <AlertCircle className="h-4 w-4 shrink-0" />
+                                        {generalError}
+                                    </div>
+                                )}
+
+                                {/* Process Button (Consistent with standard system buttons) */}
+                                <Button 
+                                    onClick={handleImport}
+                                    disabled={!file || loading}
+                                    className="w-full bg-secondary hover:bg-secondary/90 text-secondary-foreground font-bold h-12 text-base rounded-2xl shadow-lg shadow-secondary/15 transition-all duration-200 flex items-center justify-center gap-2"
+                                >
+                                    {loading ? (
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                    ) : (
+                                        <ChevronRight className="h-5 w-5" />
+                                    )}
+                                    Procesar Archivo
+                                </Button>
+                            </div>
+
+                            {/* Information columns at the bottom */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t max-w-4xl mx-auto">
+                                <div className="space-y-2 text-left">
+                                    <h4 className="font-extrabold text-xs text-secondary uppercase tracking-wider">Columnas Requeridas</h4>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        codigo (opcional), nombre, descripcion (atributo variante), costo, precio_lista, stock_inicial, categoria_nombre, marca_nombre (opcional)
+                                    </p>
+                                </div>
+                                <div className="space-y-2 text-left">
+                                    <h4 className="font-extrabold text-xs text-secondary uppercase tracking-wider">Mapeo Completo</h4>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        Deberás asociar la Marca y la Categoría antes de registrar finalmente.
+                                    </p>
+                                </div>
+                                <div className="space-y-2 text-left">
+                                    <h4 className="font-extrabold text-xs text-secondary uppercase tracking-wider">Cero Redundancia</h4>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                        Deja en blanco la celda de nombre para agregar otra variante al perfume anterior.
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Toggle button for manual load */}
+                            <div className="text-center pt-4">
+                                <Button variant="link" className="text-primary font-medium hover:underline text-xs" onClick={() => setUseManualLoad(true)}>
+                                    ¿Prefieres ingresar productos manualmente? Usar Carga Rápida Manual
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
-            </div>
-        );
+            );
+        }
 
         if (step === 'summary') return (
             <div className="max-w-2xl mx-auto p-12 text-center space-y-8 bg-card rounded-2xl border shadow-lg animate-in zoom-in-95">

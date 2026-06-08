@@ -17,22 +17,21 @@ This project is a static-first web application built with Astro.js. It is design
 *   **Audit Preservation**: Enhanced auditoria to keep actor names even after user deletion.
 *   **Lifestyle Collage**: Added a premium image collage section to the storefront using brand experience imagery.
 *   **Cédula-Based Client System**: Unique identification of clients via "Cédula", with automatic data recovery for returning customers in the Cart.
-
-## Current Architecture: Inventory
-- **Table `producto`**: Logical unit. Aggregates `total_stock` and `variants_count`.
-- **Table `variante_producto`**: Physical unit. Holds `sku`, `precio`, and `codigo_barras`.
-- **Table `inventario`**: Stores single row per variant with `stock`.
-- **Import Flow**: `POST /api/inventario/import/excel` processes rows, validating brand/category existence and creating associated product+variant+stock record in one go.
-
-## Current Architecture: Clients & Orders
-- **Client Identification**: Clients are identified and upserted based on their `cliente_cedula` (Unique).
-- **Order Linking**: Orders are linked directly to `cedula_cliente` instead of an internal serial ID.
-- **Data Validation**: Checkout requires Cédula, Name, Email, and Phone. Conflict resolution (409) is implemented for overlapping contact info.
+*   **Money Management Module**: Integrated bank accounts and physically tracked cash registers with an immutable ledger (`cuenta` and `transaccion_caja`), supporting real-time transaction query, balance overview, and transaction-safe modifications.
+*   **Sales Section Layout**: Restructured sales dashboard to feature clear, easily toggleable sections using Radix Tabs.
+*   **Módulo Independiente de Reportes**: Se extrajo la pestaña de reportes de la sección de inventario para crear un nuevo módulo independiente accesible directamente desde el menú lateral de navegación.
 
 ## Recent Changes
-- **Enriquecimiento de Marcas en Catálogo**: Eliminado el texto estático "GENERIC" y habilitado el mapeo dinámico de nombres de marcas utilizando los metadatos globales cuando el backend no proporciona el string directamente.
-- **Navegación Rápida con Enter**: Implementado sistema de navegación secuencial por teclado (Enter) en formularios bulk y editor de cola.
-- **Edición en Cola Directa**: Se habilitó la edición de precio, barras y stock directamente en la cola, con persistencia automática al avanzar.
-- **Taxonomías "al vuelo"**: Añadidos botones y diálogos para crear nuevas Categorías y Marcas sin salir del flujo de carga masiva.
-- **Optimización de UX**: Reestructuración de componentes para mejorar la estabilidad y disponibilidad de herramientas globales.
+- **Pestañas de Ventas**: Se dividió la pantalla de ventas en pestañas rápidas: Registrar Venta (POS) y Ventas Registradas (Historial).
+- **Selección de Moneda y Auto-Cálculo**: Se refinó la interfaz de pagos mixtos para permitir seleccionar la moneda de pago de un menú desplegable (USD, VES, COP) y digitar el monto en USD ($), calculando automáticamente el equivalente en la divisa seleccionada mediante la tasa de cambio, y filtrando las cuentas destino correspondientes.
+- **Creación de Reportes como Módulo Independiente**: Integrado con éxito en el Sidebar del Dashboard.
+- **Área de Inteligencia Financiera**: Integración de los KPIs de Ventas y Ganancias, resumen de facturación semanal del mes actual y gráfico temporal en la pestaña "Ventas y Ganancias" del módulo de reportes.
+
+## Current Plan: Corrección de Predicción de Reposición
+- **Backend (Express)**:
+  - Modificar `/reports/inventario/top-salidas` en `reports.routes.js` para soportar el parámetro de consulta `days` y filtrar los movimientos por fecha usando `NOW() - make_interval(days => $1::int)`.
+- **Frontend (Astro & React)**:
+  - En `reposicion.ts` (Astro API proxy), propagar `min_stock` en el objeto enriquecido usando el parámetro `threshold`.
+  - En `StockAlerts.tsx`, ajustar `computeReplenishment` para usar `min_stock` como amortiguador de seguridad cuando no hay ventas, y forzar `semanas_restantes = 0` si el stock actual es 0.
+  - En la interfaz de usuario de `StockAlerts.tsx`, cambiar la visualización de `∞` a `—` cuando no haya ventas del producto para mejorar la legibilidad y coherencia visual.
 

@@ -15,7 +15,6 @@ import {
 import { FetchData } from '@/services/fetch';
 import { API_ENDPOINTS } from '@/services/api';
 import { CreateProductDialog } from './CreateProductDialog';
-import { ImportInventoryDialog } from './ImportInventoryDialog';
 import { EditProductDialog } from './EditProductDialog';
 import {
     AlertDialog,
@@ -131,13 +130,8 @@ export const ProductList = () => {
                         className="pl-9 w-full"
                     />
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                    <div className="flex-1">
-                        <ImportInventoryDialog onImportSuccess={fetchProducts} />
-                    </div>
-                    <div className="flex-1">
-                        <CreateProductDialog onProductCreated={fetchProducts} />
-                    </div>
+                <div className="w-full sm:w-auto">
+                    <CreateProductDialog onProductCreated={fetchProducts} />
                 </div>
             </div>
             <Card>

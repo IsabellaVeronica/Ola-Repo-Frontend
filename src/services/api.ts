@@ -41,5 +41,11 @@ export const API_ENDPOINTS = {
     UPDATE_SETUP: (id: string | number) => `/api/inventario/productos/${id}/marca`,
     ADD_VARIANT: (id: string | number) => `/api/inventario/productos/${id}/variantes`,
     BULK_IMAGES: (id: string | number) => `/api/products/${id}/images`,
+  },
+  MONEY: {
+    CUENTAS: `/api/money/cuentas`,
+    CUENTA: (id: string | number) => `/api/money/cuentas/${id}`,
+    MOVIMIENTOS: `/api/money/movimientos`,
+    RESUMEN: `/api/money/resumen`
   }
 }

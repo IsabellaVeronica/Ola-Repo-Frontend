@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductList } from './ProductList';
 import { ManageTaxonomies } from '../Taxonomies/ManageTaxonomies';
-import { InventoryReports } from '../Inventory/InventoryReports';
-import { Box, Tags, FileText, UploadCloud } from 'lucide-react';
+import { Box, Tags, UploadCloud } from 'lucide-react';
 import { BulkCreateProducts } from './BulkCreateProducts';
 
 export const ProductsManagement = () => {
+    const [activeTab, setActiveTab] = useState('inventory');
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -16,7 +17,7 @@ export const ProductsManagement = () => {
                 </div>
             </div>
 
-            <Tabs defaultValue="inventory" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="overflow-x-auto w-full pb-2">
                     <TabsList className="bg-card/60 backdrop-blur-md border border-foreground/10 p-1 shadow-sm w-fit sm:w-full justify-start whitespace-nowrap">
                         <TabsTrigger value="inventory" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
@@ -28,9 +29,7 @@ export const ProductsManagement = () => {
                         <TabsTrigger value="taxonomies" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
                             <Tags className="h-4 w-4" /> Categorías y Marcas
                         </TabsTrigger>
-                        <TabsTrigger value="reports" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
-                            <FileText className="h-4 w-4" /> Reportes
-                        </TabsTrigger>
+
                     </TabsList>
                 </div>
 
@@ -39,16 +38,14 @@ export const ProductsManagement = () => {
                 </TabsContent>
 
                 <TabsContent value="bulk" className="mt-6">
-                    <BulkCreateProducts />
+                    <BulkCreateProducts onImportSuccess={() => setActiveTab('inventory')} />
                 </TabsContent>
 
                 <TabsContent value="taxonomies" className="mt-6">
                     <ManageTaxonomies />
                 </TabsContent>
 
-                <TabsContent value="reports" className="mt-6">
-                    <InventoryReports />
-                </TabsContent>
+
             </Tabs>
         </div>
     );

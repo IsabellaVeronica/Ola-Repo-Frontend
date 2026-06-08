@@ -7,6 +7,7 @@ import {
     CreditCard, Plus, Package, ShoppingCart, Minus, Trash2,
     ReceiptText, ClipboardList, ArrowLeft, ImageOff
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // ─────────────────────────────── Types ───────────────────────────────────
 
@@ -76,7 +77,7 @@ function parseAttrs(raw?: VariantAttr | string | null): string {
 function variantImageSrc(url?: string | null): string | null {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return url; // relative `/uploads/...` works directly via frontend proxy
+    return url;
 }
 
 // ─────────────────────────────── Sub-components ───────────────────────────
@@ -270,7 +271,6 @@ const VariantCard = ({ variant, onAdd }: { variant: CatalogVariant; onAdd: (v: C
                     {outOfStock ? 'Sin stock' : `${variant.stock} uds`}
                 </div>
             </div>
-
             {/* Info */}
             <div className="p-3 flex flex-col gap-1 flex-1">
                 <p className="font-semibold text-sm text-foreground line-clamp-2 leading-tight">{variant.nombre_producto}</p>
@@ -293,6 +293,23 @@ const VariantCard = ({ variant, onAdd }: { variant: CatalogVariant; onAdd: (v: C
 
 // ─────────────────────────────── POS Form ────────────────────────────────
 
+interface Account {
+    id_cuenta: number;
+    nombre: string;
+    moneda: string;
+    saldo: number;
+}
+
+interface PagoItem {
+    id_cuenta: number;
+    cuenta_nombre: string;
+    moneda_pago: string;
+    tasa_cambio: number;
+    monto_real: number;
+    monto_usd: number;
+    referencia_pago?: string;
+}
+
 const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void; }) => {
     const [search, setSearch] = useState('');
     const [includeNoStock, setIncludeNoStock] = useState(false);
@@ -301,19 +318,30 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
     const [catalogError, setCatalogError] = useState('');
     const [cart, setCart] = useState<CartItem[]>([]);
 
+    // Empaque / Consumibles quick add
+    const [consumables, setConsumables] = useState<CatalogVariant[]>([]);
+
     // Form state
     const [clienteCedula, setClienteCedula] = useState('');
     const [clienteNombre, setClienteNombre] = useState('');
     const [clienteEmail, setClienteEmail] = useState('');
     const [clienteTelefono, setClienteTelefono] = useState('');
-    const [metodoPago, setMetodoPago] = useState('efectivo');
-    const [referenciaPago, setReferenciaPago] = useState('');
     const [observacion, setObservacion] = useState('');
 
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitError, setSubmitError] = useState('');
     const [isSearchingClient, setIsSearchingClient] = useState(false);
     const lastLookupRef = useRef('');
+
+    // Multidivisa split payments state
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    const [pagos, setPagos] = useState<PagoItem[]>([]);
+
+    const [pagoMoneda, setPagoMoneda] = useState<string>('USD');
+    const [pagoCuentaId, setPagoCuentaId] = useState<number>(0);
+    const [pagoTasaCambio, setPagoTasaCambio] = useState<string>('1');
+    const [pagoMontoUsd, setPagoMontoUsd] = useState<string>('');
+    const [pagoReferencia, setPagoReferencia] = useState<string>('');
 
     const normalizeCedula = (raw: string) =>
         String(raw || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -338,6 +366,52 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
         const t = setTimeout(fetchCatalog, 300);
         return () => clearTimeout(t);
     }, [fetchCatalog]);
+
+    // Fetch consumables (bags, gift boxes, packaging) on mount
+    useEffect(() => {
+        const fetchConsumables = async () => {
+            try {
+                const res = await fetch('/api/ventas/catalogo?limit=100&include_no_stock=true');
+                if (res.ok) {
+                    const data = await res.json();
+                    const list: CatalogVariant[] = Array.isArray(data) ? data : (data.data || data.items || []);
+                    const filtered = list.filter(v => {
+                        const name = (v.nombre_producto || '').toLowerCase();
+                        const sku = (v.sku || '').toLowerCase();
+                        return name.includes('bolsa') || name.includes('caja') || name.includes('empaque') || name.includes('embalaje') ||
+                               sku.includes('bolsa') || sku.includes('caja') || sku.includes('empaque') || sku.includes('embalaje');
+                    });
+                    setConsumables(filtered);
+                }
+            } catch (e) {
+                console.error("Error fetching consumables:", e);
+            }
+        };
+        fetchConsumables();
+    }, []);
+
+    // Load accounts
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            try {
+                const res = await fetch('/api/money/cuentas');
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = Array.isArray(data) ? data : (data.data || []);
+                    const activeList = list.filter((a: any) => a.activo && !a.eliminado);
+                    setAccounts(activeList);
+                    if (activeList.length > 0) {
+                        const usdAcc = activeList.find((a: any) => a.nombre.toLowerCase().includes('efectivo') || a.moneda === 'USD') || activeList[0];
+                        setPagoCuentaId(usdAcc.id_cuenta);
+                        setPagoMoneda(usdAcc.moneda);
+                    }
+                }
+            } catch (e) {
+                console.error("Error loading accounts:", e);
+            }
+        };
+        fetchAccounts();
+    }, []);
 
     // Auto-completa datos del cliente cuando se ingresa cédula (igual que checkout/cart)
     useEffect(() => {
@@ -376,7 +450,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
         setCart(prev => {
             const existing = prev.find(ci => ci.variant.id_variante_producto === variant.id_variante_producto);
             if (existing) {
-                if (existing.cantidad >= variant.stock) return prev; // Respect stock
+                if (existing.cantidad >= variant.stock) return prev;
                 return prev.map(ci => ci.variant.id_variante_producto === variant.id_variante_producto
                     ? { ...ci, cantidad: ci.cantidad + 1 } : ci);
             }
@@ -388,7 +462,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
         setCart(prev => prev.map(ci => {
             if (ci.variant.id_variante_producto !== id) return ci;
             const newQty = ci.cantidad + delta;
-            if (newQty <= 0) return ci; // handled by remove
+            if (newQty <= 0) return ci;
             if (newQty > ci.variant.stock) return ci;
             return { ...ci, cantidad: newQty };
         }));
@@ -407,9 +481,80 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
     };
 
     const total = useMemo(() => cart.reduce((s, ci) => s + ci.variant.precio_lista * ci.cantidad, 0), [cart]);
+    const totalPaid = useMemo(() => pagos.reduce((sum, p) => sum + p.monto_usd, 0), [pagos]);
+    const pending = total - totalPaid;
+
+    const filteredAccounts = useMemo(() => {
+        return accounts.filter(a => a.moneda === pagoMoneda);
+    }, [accounts, pagoMoneda]);
+
+    const calculatedMontoReal = useMemo(() => {
+        const usd = parseFloat(pagoMontoUsd);
+        const rate = parseFloat(pagoTasaCambio);
+        if (isNaN(usd) || usd <= 0 || isNaN(rate) || rate <= 0) return 0;
+        return +(usd * rate).toFixed(2);
+    }, [pagoMontoUsd, pagoTasaCambio]);
+
+    // Auto-populate full payment when pending amount changes
+    useEffect(() => {
+        if (pending > 0) {
+            setPagoMontoUsd(pending.toFixed(2));
+        } else {
+            setPagoMontoUsd('');
+        }
+    }, [pending]);
+
+    const handleMonedaChange = (moneda: string) => {
+        setPagoMoneda(moneda);
+        let defaultRate = '1';
+        if (moneda === 'VES') defaultRate = '36';
+        else if (moneda === 'COP') defaultRate = '4000';
+        setPagoTasaCambio(defaultRate);
+
+        const filtered = accounts.filter(a => a.moneda === moneda);
+        if (filtered.length > 0) {
+            setPagoCuentaId(filtered[0].id_cuenta);
+        } else {
+            setPagoCuentaId(0);
+        }
+    };
+
+    const handleAddPago = () => {
+        const acc = accounts.find(a => a.id_cuenta === pagoCuentaId);
+        if (!acc) return;
+        const valUsd = parseFloat(pagoMontoUsd);
+        const rate = parseFloat(pagoTasaCambio);
+        if (isNaN(valUsd) || valUsd <= 0) return;
+        if (isNaN(rate) || rate <= 0) return;
+
+        const valReal = +(valUsd * rate).toFixed(2);
+
+        // Limitar a máximo el saldo pendiente para evitar sobrepago por centavos
+        const cleanUsd = valUsd > pending ? pending : valUsd;
+        const cleanReal = valUsd > pending ? parseFloat((pending * rate).toFixed(2)) : valReal;
+
+        const newPago: PagoItem = {
+            id_cuenta: pagoCuentaId,
+            cuenta_nombre: acc.nombre,
+            moneda_pago: acc.moneda,
+            tasa_cambio: rate,
+            monto_real: cleanReal,
+            monto_usd: cleanUsd,
+            referencia_pago: pagoReferencia.trim() || undefined
+        };
+
+        setPagos(prev => [...prev, newPago]);
+        setPagoMontoUsd('');
+        setPagoReferencia('');
+    };
+
+    const handleRemovePago = (idx: number) => {
+        setPagos(prev => prev.filter((_, i) => i !== idx));
+    };
 
     const handleSubmit = async () => {
         if (cart.length === 0) { setSubmitError('Agrega al menos un producto al carrito.'); return; }
+        if (Math.abs(pending) > 0.01) { setSubmitError('El monto total pagado debe ser exactamente igual al total de la venta.'); return; }
         setSubmitLoading(true); setSubmitError('');
         try {
             const res = await fetch('/api/ventas', {
@@ -420,23 +565,30 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                     cliente_nombre: clienteNombre || undefined,
                     cliente_email: clienteEmail || undefined,
                     cliente_telefono: clienteTelefono || undefined,
-                    metodo_pago: metodoPago,
-                    referencia_pago: referenciaPago || undefined,
                     observacion: observacion || undefined,
                     items: cart.map(ci => ({
                         id_variante_producto: ci.variant.id_variante_producto,
                         cantidad: ci.cantidad,
                     })),
+                    pagos: pagos.map(p => ({
+                        id_cuenta: p.id_cuenta,
+                        moneda_pago: p.moneda_pago,
+                        tasa_cambio: p.tasa_cambio,
+                        monto_real: p.monto_real,
+                        monto_usd: p.monto_usd,
+                        referencia_pago: p.referencia_pago
+                    }))
                 }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok) {
                 setCart([]);
+                setPagos([]);
                 onSuccess();
             } else if (res.status === 409) {
-                setSubmitError(`âš  ${data.message || 'Stock insuficiente o venta ya registrada.'}`);
+                setSubmitError(`⚠️ ${data.message || 'Stock insuficiente o venta ya registrada.'}`);
             } else {
-                setSubmitError(data.message || data.error || `Error ${res.status}: solicitud invÃ¡lida.`);
+                setSubmitError(data.message || data.error || `Error ${res.status}: solicitud inválida.`);
             }
         } catch { setSubmitError('Error de conexión.'); }
         finally { setSubmitLoading(false); }
@@ -456,7 +608,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
-                {/* â”€â”€ LEFT: Catalog â”€â”€ */}
+                {/* ── LEFT: Catalog ── */}
                 <div className="flex-1 flex flex-col gap-4 min-h-0">
                     {/* Catalog search */}
                     <div className="flex gap-3 items-center">
@@ -494,7 +646,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                     </div>
                 </div>
 
-                {/* â”€â”€ RIGHT: Cart + Form â”€â”€ */}
+                {/* ── RIGHT: Cart + Form ── */}
                 <div className="w-full lg:w-[380px] xl:w-[420px] flex flex-col gap-4">
                     {/* Cart */}
                     <div className="rounded-xl border bg-card shadow-sm flex flex-col">
@@ -507,7 +659,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                             )}
                         </div>
 
-                        <div className="overflow-y-auto max-h-[260px] divide-y">
+                        <div className="overflow-y-auto max-h-[200px] divide-y">
                             {cart.length === 0 ? (
                                 <p className="text-center text-xs text-muted-foreground py-8">Agrega productos desde el catálogo.</p>
                             ) : cart.map(ci => (
@@ -545,13 +697,68 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                         )}
                     </div>
 
+                    {/* Material de Empaque / Consumibles */}
+                    {consumables.length > 0 && (
+                        <div className="rounded-xl border bg-card shadow-sm p-4 space-y-3">
+                            <h3 className="font-bold text-sm flex items-center gap-2">
+                                <Package className="h-4 w-4 text-primary" /> Material de Empaque / Consumibles
+                            </h3>
+                            <div className="space-y-2">
+                                {consumables.map(v => {
+                                    const cartItem = cart.find(ci => ci.variant.id_variante_producto === v.id_variante_producto);
+                                    const qty = cartItem ? cartItem.cantidad : 0;
+                                    const outOfStock = v.stock <= 0;
+                                    
+                                    return (
+                                        <div key={v.id_variante_producto} className="flex items-center justify-between text-xs py-1.5 px-2.5 rounded-lg bg-secondary/25 border border-border hover:bg-secondary/40 transition-colors">
+                                            <div className="min-w-0 flex-1 pr-2">
+                                                <p className="font-medium truncate">{v.nombre_producto}</p>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    Stock: {v.stock} uds {v.precio_lista > 0 ? `· $${v.precio_lista.toFixed(2)}` : ''}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {qty === 0 ? (
+                                                    <button
+                                                        onClick={() => addToCart(v)}
+                                                        disabled={outOfStock}
+                                                        className="h-7 px-3 rounded bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 font-bold transition-all flex items-center gap-1"
+                                                    >
+                                                        <Plus className="h-3.5 w-3.5" /> Agregar
+                                                    </button>
+                                                ) : (
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            onClick={() => qty === 1 ? removeFromCart(v.id_variante_producto) : updateQty(v.id_variante_producto, -1)}
+                                                            className="w-7 h-7 rounded border border-border hover:bg-muted flex items-center justify-center transition-colors"
+                                                        >
+                                                            <Minus className="h-3 w-3" />
+                                                        </button>
+                                                        <span className="w-6 text-center font-bold text-xs">{qty}</span>
+                                                        <button
+                                                            onClick={() => updateQty(v.id_variante_producto, 1)}
+                                                            disabled={qty >= v.stock}
+                                                            className="w-7 h-7 rounded border border-border hover:bg-muted flex items-center justify-center disabled:opacity-40 transition-colors"
+                                                        >
+                                                            <Plus className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Client + Payment form */}
                     <div className="rounded-xl border bg-card shadow-sm p-4 space-y-3">
                         <h3 className="font-bold text-sm flex items-center gap-2">
                             <ReceiptText className="h-4 w-4 text-primary" /> Datos de la Venta
                         </h3>
 
-                                                {/* Client fields */}
+                        {/* Client fields */}
                         <div className="grid grid-cols-2 gap-2">
                             <div className="space-y-0.5">
                                 <label className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
@@ -593,25 +800,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                                 />
                             </div>
                         </div>
-                        {/* Payment */}
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-0.5">
-                                <label className="text-[10px] font-medium text-muted-foreground">Método *</label>
-                                <select
-                                    className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                                    value={metodoPago} onChange={e => setMetodoPago(e.target.value)}
-                                >
-                                    {METODOS_PAGO.map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-0.5">
-                                <label className="text-[10px] font-medium text-muted-foreground">Referencia</label>
-                                <input
-                                    className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                                    placeholder="REF-001" value={referenciaPago} onChange={e => setReferenciaPago(e.target.value)}
-                                />
-                            </div>
-                        </div>
+
                         <div className="space-y-0.5">
                             <label className="text-[10px] font-medium text-muted-foreground">Observación</label>
                             <input
@@ -619,6 +808,129 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                                 placeholder="Ej: Mostrador" value={observacion} onChange={e => setObservacion(e.target.value)}
                             />
                         </div>
+
+                        {/* Pagos Realizados */}
+                        <div className="space-y-2 pt-2 border-t">
+                            <label className="text-xs font-bold text-muted-foreground">Pagos Registrados</label>
+                            {pagos.length === 0 ? (
+                                <p className="text-xs text-muted-foreground text-center py-2 bg-muted/20 rounded-md">No hay pagos agregados aún.</p>
+                            ) : (
+                                <div className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+                                    {pagos.map((p, idx) => (
+                                        <div key={idx} className="flex justify-between items-center text-xs p-2 bg-secondary/30 rounded-md border border-border">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="font-semibold truncate text-[11px]">{p.cuenta_nombre}</p>
+                                                <p className="text-[9px] text-muted-foreground font-mono">
+                                                    {p.monto_real} {p.moneda_pago} (Tasa: {p.tasa_cambio}) {p.referencia_pago ? `[Ref: ${p.referencia_pago}]` : ''}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className="font-bold text-primary">${p.monto_usd.toFixed(2)}</span>
+                                                <button onClick={() => handleRemovePago(idx)} className="p-1 hover:bg-muted text-destructive rounded transition-colors">
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Balance indicator */}
+                            <div className="grid grid-cols-3 gap-2 text-center text-xs bg-muted/40 p-2 rounded-md border">
+                                <div>
+                                    <p className="text-[9px] text-muted-foreground uppercase font-bold">Total</p>
+                                    <p className="font-bold text-foreground">${total.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[9px] text-muted-foreground uppercase font-bold">Pagado</p>
+                                    <p className="font-bold text-green-600 dark:text-green-400">${totalPaid.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[9px] text-muted-foreground uppercase font-bold">Pendiente</p>
+                                    <p className={`font-bold ${Math.abs(pending) < 0.01 ? 'text-green-600 dark:text-green-400' : 'text-orange-500'}`}>
+                                        ${pending.toFixed(2)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Add Payment Form */}
+                        {Math.abs(pending) > 0.01 && (
+                            <div className="space-y-2.5 p-3 bg-muted/20 rounded-lg border">
+                                <label className="text-[9px] font-bold text-muted-foreground uppercase">Agregar Pago Parcial</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-0.5">
+                                        <label className="text-[9px] font-medium text-muted-foreground">Moneda de pago</label>
+                                        <select
+                                            className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring font-medium"
+                                            value={pagoMoneda}
+                                            onChange={e => handleMonedaChange(e.target.value)}
+                                        >
+                                            <option value="USD">USD ($)</option>
+                                            <option value="VES">VES (Bs)</option>
+                                            <option value="COP">COP ($)</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <label className="text-[9px] font-medium text-muted-foreground">Monto USD ($)</label>
+                                        <input
+                                            className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring font-semibold"
+                                            placeholder="10.00"
+                                            value={pagoMontoUsd}
+                                            onChange={e => setPagoMontoUsd(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-0.5 col-span-2">
+                                        <label className="text-[9px] font-medium text-muted-foreground">Cuenta destino</label>
+                                        <select
+                                            className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                            value={pagoCuentaId}
+                                            onChange={e => setPagoCuentaId(parseInt(e.target.value, 10))}
+                                        >
+                                            <option value={0}>Selecciona una cuenta</option>
+                                            {filteredAccounts.map(acc => (
+                                                <option key={acc.id_cuenta} value={acc.id_cuenta}>
+                                                    {acc.nombre} ({acc.moneda})
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <label className="text-[9px] font-medium text-muted-foreground">Tasa de cambio</label>
+                                        <input
+                                            className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                            placeholder="36.00"
+                                            value={pagoTasaCambio}
+                                            onChange={e => setPagoTasaCambio(e.target.value)}
+                                            disabled={pagoMoneda === 'USD'}
+                                        />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <label className="text-[9px] font-medium text-muted-foreground">Referencia</label>
+                                        <input
+                                            className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                            placeholder="Opcional"
+                                            value={pagoReferencia}
+                                            onChange={e => setPagoReferencia(e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    {/* Monto Equivalente Calculado */}
+                                    <div className="col-span-2 px-2.5 py-1.5 bg-primary/5 rounded-md border border-primary/10 text-center">
+                                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Monto equivalente a cobrar</p>
+                                        <p className="font-bold text-sm text-primary">
+                                            {calculatedMontoReal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {pagoMoneda}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleAddPago}
+                                    className="w-full py-1.5 bg-secondary text-secondary-foreground rounded text-xs font-bold hover:bg-secondary/80 transition-colors flex items-center justify-center gap-1"
+                                >
+                                    <Plus className="h-3.5 w-3.5" /> Añadir Pago
+                                </button>
+                            </div>
+                        )}
 
                         {submitError && (
                             <div className="flex items-start gap-2 p-2.5 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-xs">
@@ -628,7 +940,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
 
                         <button
                             onClick={handleSubmit}
-                            disabled={submitLoading || cart.length === 0}
+                            disabled={submitLoading || cart.length === 0 || Math.abs(pending) > 0.01}
                             className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-bold text-sm hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-primary/20"
                         >
                             {submitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
@@ -643,10 +955,8 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
 
 // ─────────────────────────────── Main Manager ─────────────────────────────
 
-type View = 'list' | 'new';
-
 const VentasManagerContent: React.FC = () => {
-    const [view, setView] = useState<View>('list');
+    const [activeTab, setActiveTab] = useState<string>('new');
     const [ventas, setVentas] = useState<Venta[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -686,11 +996,11 @@ const VentasManagerContent: React.FC = () => {
     }, [page, search, statusFilter, dateFrom, dateTo]);
 
     useEffect(() => {
-        if (view === 'list') {
+        if (activeTab === 'list') {
             const t = setTimeout(fetchVentas, 300);
             return () => clearTimeout(t);
         }
-    }, [fetchVentas, view]);
+    }, [fetchVentas, activeTab]);
 
     const fetchDetail = async (id: number) => {
         const res = await fetch(`/api/ventas/${id}`);
@@ -704,29 +1014,19 @@ const VentasManagerContent: React.FC = () => {
     };
 
     const handleSaleSuccess = () => {
-        setView('list');
+        setActiveTab('list');
         setSuccessMsg('¡Venta registrada exitosamente! El stock fue actualizado.');
         fetchVentas(); setTimeout(() => setSuccessMsg(''), 5000);
     };
 
-    if (view === 'new') {
-        return <RegistrarVentaView onSuccess={handleSaleSuccess} onCancel={() => setView('list')} />;
-    }
-
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-primary">Ventas</h2>
-                    <p className="text-muted-foreground text-sm hidden sm:block">Historial y gestión de ventas concretadas.</p>
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-foreground drop-shadow-sm">Ventas</h1>
+                    <p className="text-foreground/70 font-medium hidden sm:block">Historial y registro de ventas.</p>
                 </div>
-                <button
-                    onClick={() => setView('new')}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
-                >
-                    <Plus className="h-4 w-4" /> Registrar Venta
-                </button>
             </div>
 
             {/* Success Banner */}
@@ -736,122 +1036,141 @@ const VentasManagerContent: React.FC = () => {
                 </div>
             )}
 
-            {/* Filters */}
-            <div className="rounded-lg border bg-card shadow-sm p-4 space-y-3">
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <input type="text" placeholder="Buscar por cliente, cédula..."
-                            className="w-full h-10 rounded-md border border-input bg-background pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                            value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-                    </div>
-                    <select
-                        className="h-10 w-full sm:w-44 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
-                    >
-                        <option value="">Todos los estados</option>
-                        <option value="completada">Completadas</option>
-                        <option value="anulada">Anuladas</option>
-                    </select>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                        <button onClick={() => setShowFilters(!showFilters)}
-                            className={`flex-1 sm:flex-none h-10 px-4 rounded-md border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${showFilters ? 'bg-secondary text-secondary-foreground border-secondary' : 'bg-background hover:bg-accent border-input'}`}>
-                            <Filter className="h-4 w-4" /> Fechas
-                        </button>
-                        <button onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1); }}
-                            className="flex-1 sm:flex-none h-10 px-4 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted transition-colors">
-                            Limpiar
-                        </button>
-                    </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="overflow-x-auto w-full pb-2">
+                    <TabsList className="bg-card/60 backdrop-blur-md border border-foreground/10 p-1 shadow-sm w-fit sm:w-full justify-start whitespace-nowrap">
+                        <TabsTrigger value="new" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <Plus className="h-4 w-4" /> Registrar Venta
+                        </TabsTrigger>
+                        <TabsTrigger value="list" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <ClipboardList className="h-4 w-4" /> Ventas Registradas
+                        </TabsTrigger>
+                    </TabsList>
                 </div>
-                {showFilters && (
-                    <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground"><Calendar className="h-3 w-3" /> Desde</label>
-                            <input type="date" className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+
+                <TabsContent value="new" className="mt-6">
+                    <RegistrarVentaView onSuccess={handleSaleSuccess} onCancel={() => setActiveTab('list')} />
+                </TabsContent>
+
+                <TabsContent value="list" className="mt-6 space-y-6">
+                    {/* Filters */}
+                    <div className="rounded-lg border bg-card shadow-sm p-4 space-y-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <input type="text" placeholder="Buscar por cliente, cédula..."
+                                    className="w-full h-10 rounded-md border border-input bg-background pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+                            </div>
+                            <select
+                                className="h-10 w-full sm:w-44 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+                            >
+                                <option value="">Todos los estados</option>
+                                <option value="completada">Completadas</option>
+                                <option value="anulada">Anuladas</option>
+                            </select>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <button onClick={() => setShowFilters(!showFilters)}
+                                    className={`flex-1 sm:flex-none h-10 px-4 rounded-md border text-sm font-medium flex items-center justify-center gap-2 transition-colors ${showFilters ? 'bg-secondary text-secondary-foreground border-secondary' : 'bg-background hover:bg-accent border-input'}`}>
+                                    <Filter className="h-4 w-4" /> Fechas
+                                </button>
+                                <button onClick={() => { setSearch(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1); }}
+                                    className="flex-1 sm:flex-none h-10 px-4 rounded-md border border-input text-sm text-muted-foreground hover:bg-muted transition-colors">
+                                    Limpiar
+                                </button>
+                            </div>
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground"><Calendar className="h-3 w-3" /> Hasta</label>
-                            <input type="date" className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+                        {showFilters && (
+                            <div className="grid grid-cols-2 gap-3 pt-2 border-t">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground"><Calendar className="h-3 w-3" /> Desde</label>
+                                    <input type="date" className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium flex items-center gap-1 text-muted-foreground"><Calendar className="h-3 w-3" /> Hasta</label>
+                                    <input type="date" className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Table */}
+                    <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="bg-muted/40">
+                                    <tr className="border-b">
+                                        {['ID', 'Cliente', 'Fecha', 'Método', 'Estado', 'Total', ''].map((h, i) => (
+                                            <th key={i} className={`h-12 px-4 font-medium text-muted-foreground whitespace-nowrap ${h === 'Total' ? 'text-right' : h === '' ? 'text-center' : ''}`}>{h}</th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {loading ? (
+                                        <tr><td colSpan={7} className="h-24 text-center text-muted-foreground">
+                                            <div className="flex items-center justify-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Cargando ventas...</div>
+                                        </td></tr>
+                                    ) : errorMsg ? (
+                                        <tr><td colSpan={7} className="h-24 text-center text-destructive">{errorMsg}</td></tr>
+                                    ) : ventas.length === 0 ? (
+                                        <tr><td colSpan={7} className="h-24 text-center text-muted-foreground">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <ClipboardList className="h-8 w-8 text-muted-foreground/30" />
+                                                No se encontraron ventas.
+                                            </div>
+                                        </td></tr>
+                                    ) : ventas.map(v => (
+                                        <tr key={v.id_venta} className={`border-b hover:bg-muted/30 transition-colors ${v.estado === 'anulada' ? 'opacity-60' : ''}`}>
+                                            <td className="p-4 font-bold text-primary">#{v.id_venta}</td>
+                                            <td className="p-4">
+                                                <p className="font-medium">{v.cliente_nombre || 'Sin nombre'}</p>
+                                                {v.cliente_cedula && <p className="text-xs text-muted-foreground">{v.cliente_cedula}</p>}
+                                            </td>
+                                            <td className="p-4 text-xs text-muted-foreground">
+                                                {v.created_at ? format(new Date(v.created_at), "d MMM yyyy, HH:mm", { locale: es }) : '—'}
+                                            </td>
+                                            <td className="p-4"><PaymentBadge method={v.metodo_pago} /></td>
+                                            <td className="p-4"><StatusBadge status={v.estado} /></td>
+                                            <td className="p-4 text-right font-semibold">
+                                                ${(Number(v.total) || 0).toLocaleString('es-CO', { minimumFractionDigits: 2 })}
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <button onClick={() => fetchDetail(v.id_venta)}
+                                                    className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors">
+                                                    <Eye className="h-4 w-4" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-                )}
-            </div>
 
-            {/* Table */}
-            <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="bg-muted/40">
-                            <tr className="border-b">
-                                {['ID', 'Cliente', 'Fecha', 'Método', 'Estado', 'Total', ''].map((h, i) => (
-                                    <th key={i} className={`h-12 px-4 font-medium text-muted-foreground whitespace-nowrap ${h === 'Total' ? 'text-right' : h === '' ? 'text-center' : ''}`}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr><td colSpan={7} className="h-24 text-center text-muted-foreground">
-                                    <div className="flex items-center justify-center gap-2"><Loader2 className="h-5 w-5 animate-spin" /> Cargando ventas...</div>
-                                </td></tr>
-                            ) : errorMsg ? (
-                                <tr><td colSpan={7} className="h-24 text-center text-destructive">{errorMsg}</td></tr>
-                            ) : ventas.length === 0 ? (
-                                <tr><td colSpan={7} className="h-24 text-center text-muted-foreground">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <ClipboardList className="h-8 w-8 text-muted-foreground/30" />
-                                        No se encontraron ventas.
-                                    </div>
-                                </td></tr>
-                            ) : ventas.map(v => (
-                                <tr key={v.id_venta} className={`border-b hover:bg-muted/30 transition-colors ${v.estado === 'anulada' ? 'opacity-60' : ''}`}>
-                                    <td className="p-4 font-bold text-primary">#{v.id_venta}</td>
-                                    <td className="p-4">
-                                        <p className="font-medium">{v.cliente_nombre || 'Sin nombre'}</p>
-                                        {v.cliente_cedula && <p className="text-xs text-muted-foreground">{v.cliente_cedula}</p>}
-                                    </td>
-                                    <td className="p-4 text-xs text-muted-foreground">
-                                        {v.created_at ? format(new Date(v.created_at), "d MMM yyyy, HH:mm", { locale: es }) : 'â€”'}
-                                    </td>
-                                    <td className="p-4"><PaymentBadge method={v.metodo_pago} /></td>
-                                    <td className="p-4"><StatusBadge status={v.estado} /></td>
-                                    <td className="p-4 text-right font-semibold">
-                                        ${(Number(v.total) || 0).toLocaleString('es-CO', { minimumFractionDigits: 2 })}
-                                    </td>
-                                    <td className="p-4 text-center">
-                                        <button onClick={() => fetchDetail(v.id_venta)}
-                                            className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors">
-                                            <Eye className="h-4 w-4" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+                    {/* Pagination */}
+                    <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading}
+                            className="h-9 px-4 border border-input rounded-md text-sm hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors">
+                            <ChevronLeft className="h-4 w-4" /> Anterior
+                        </button>
+                        <span className="text-sm font-medium px-2">Página {page}</span>
+                        <button onClick={() => setPage(p => p + 1)} disabled={ventas.length < limit || loading}
+                            className="h-9 px-4 border border-input rounded-md text-sm hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors">
+                            Siguiente <ChevronRight className="h-4 w-4" />
+                        </button>
+                    </div>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-end gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1 || loading}
-                    className="h-9 px-4 border border-input rounded-md text-sm hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors">
-                    <ChevronLeft className="h-4 w-4" /> Anterior
-                </button>
-                <span className="text-sm font-medium px-2">PÃ¡gina {page}</span>
-                <button onClick={() => setPage(p => p + 1)} disabled={ventas.length < limit || loading}
-                    className="h-9 px-4 border border-input rounded-md text-sm hover:bg-accent disabled:opacity-50 flex items-center gap-1 transition-colors">
-                    Siguiente <ChevronRight className="h-4 w-4" />
-                </button>
-            </div>
-
-            {/* Modals */}
-            {selectedVenta && (
-                <VentaDetailModal venta={selectedVenta} onClose={() => setSelectedVenta(null)}
-                    onAnular={() => setVentaToAnular(selectedVenta)} userRole={userRole} />
-            )}
-            {ventaToAnular && (
-                <AnularDialog venta={ventaToAnular} onClose={() => setVentaToAnular(null)} onSuccess={handleAnularSuccess} />
-            )}
+                    {/* Modals */}
+                    {selectedVenta && (
+                        <VentaDetailModal venta={selectedVenta} onClose={() => setSelectedVenta(null)}
+                            onAnular={() => setVentaToAnular(selectedVenta)} userRole={userRole} />
+                    )}
+                    {ventaToAnular && (
+                        <AnularDialog venta={ventaToAnular} onClose={() => setVentaToAnular(null)} onSuccess={handleAnularSuccess} />
+                    )}
+                </TabsContent>
+            </Tabs>
         </div>
     );
 };
@@ -863,7 +1182,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
     render() {
         if (this.state.hasError) return (
             <div className="p-6 border border-destructive bg-destructive/10 text-destructive rounded-lg m-4">
-                <h2 className="text-xl font-bold mb-2">Error en el mÃ³dulo de ventas.</h2>
+                <h2 className="text-xl font-bold mb-2">Error en el módulo de ventas.</h2>
                 <button onClick={() => window.location.reload()} className="px-4 py-2 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 text-sm">
                     Recargar
                 </button>
@@ -874,4 +1193,3 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 export const VentasManager: React.FC = () => <ErrorBoundary><VentasManagerContent /></ErrorBoundary>;
-

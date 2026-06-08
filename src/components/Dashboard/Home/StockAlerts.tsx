@@ -27,9 +27,12 @@ function computeReplenishment(item: ReplenishmentItem): ComputedItem {
     const ventas_por_semana = Math.round(ventas_por_dia * 7 * 10) / 10;
 
     // Weeks of stock remaining
-    const semanas_restantes = ventas_por_semana > 0
-        ? Math.round((item.stock_actual / ventas_por_semana) * 10) / 10
-        : null;
+    let semanas_restantes: number | null = null;
+    if (item.stock_actual === 0) {
+        semanas_restantes = 0;
+    } else if (ventas_por_semana > 0) {
+        semanas_restantes = Math.round((item.stock_actual / ventas_por_semana) * 10) / 10;
+    }
 
     // Recommended: cover 4 weeks of demand + safety buffer (min_stock)
     const targetWeeks = 4;
@@ -241,7 +244,7 @@ export const StockAlerts: React.FC = () => {
                                         </div>
                                         <div className="bg-background/60 rounded-md p-2 text-center">
                                             <p className="text-lg font-bold text-foreground">
-                                                {item.semanas_restantes !== null ? `${item.semanas_restantes}s` : '∞'}
+                                                {item.semanas_restantes !== null ? `${item.semanas_restantes}s` : '—'}
                                             </p>
                                             <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Duración</p>
                                         </div>

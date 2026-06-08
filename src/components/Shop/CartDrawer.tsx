@@ -48,15 +48,31 @@ export const CartDrawer: React.FC = () => {
         const timeout = setTimeout(async () => {
             setIsSearchingClient(true);
             try {
-                const res = await fetch(`/api/guest/client/${customerCedula}`);
+                // Try searching with the current value
+                let res = await fetch(`/api/guest/client/${encodeURIComponent(customerCedula)}`);
+                
+                // FALLBACK: If 404, try searching without prefix/non-numeric chars
+                if (res.status === 404) {
+                    const numbersOnly = customerCedula.replace(/[^0-9]/g, '');
+                    if (numbersOnly.length >= 6) {
+                        console.log(`CartDrawer: Falling back to numeric-only search for: ${numbersOnly}`);
+                        res = await fetch(`/api/guest/client/${numbersOnly}`);
+                    }
+                }
+
                 if (res.ok) {
                     const result = await res.json();
                     if (result.status === 'success' && result.data) {
-                        const { nombre, email, telefono } = result.data;
+                        const { nombre, email, telefono, cedula_cliente, id_cliente } = result.data;
                         if (nombre) setCustomerName(nombre);
                         if (email) setCustomerEmail(email);
-                        // Formatear el teléfono si viene del backend
                         if (telefono) setCustomerPhone(formatPhoneNumber(telefono));
+                        
+                        // If we found the client with a different cedula format, respect the one in DB
+                        if (cedula_cliente && cedula_cliente !== customerCedula) {
+                            console.log(`CartDrawer: Auto-adjusting cedula from ${customerCedula} to ${cedula_cliente}`);
+                            setCustomerCedula(cedula_cliente);
+                        }
                     }
                 }
             } catch (error) {
@@ -159,7 +175,8 @@ export const CartDrawer: React.FC = () => {
                 }));
             } else {
                 const errorData = await res.json().catch(() => ({}));
-                if (res.status === 409) {
+                // Even on 500, if the backend sent a descriptive message about duplicate data, show it nicely.
+                if (res.status === 409 || (res.status === 500 && (errorData.message?.toLowerCase().includes('registrado') || errorData.message?.toLowerCase().includes('existe')))) {
                     setErrorMessage(errorData.message || "La cédula, email o teléfono ya están asociados a otro cliente.");
                 } else {
                     setErrorMessage(errorData.message || "Error al procesar el pedido. Por favor intenta de nuevo.");
