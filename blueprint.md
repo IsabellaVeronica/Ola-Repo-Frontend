@@ -27,11 +27,14 @@ This project is a static-first web application built with Astro.js. It is design
 - **Creación de Reportes como Módulo Independiente**: Integrado con éxito en el Sidebar del Dashboard.
 - **Área de Inteligencia Financiera**: Integración de los KPIs de Ventas y Ganancias, resumen de facturación semanal del mes actual y gráfico temporal en la pestaña "Ventas y Ganancias" del módulo de reportes.
 
-## Current Plan: Corrección de Predicción de Reposición
-- **Backend (Express)**:
-  - Modificar `/reports/inventario/top-salidas` en `reports.routes.js` para soportar el parámetro de consulta `days` y filtrar los movimientos por fecha usando `NOW() - make_interval(days => $1::int)`.
-- **Frontend (Astro & React)**:
-  - En `reposicion.ts` (Astro API proxy), propagar `min_stock` en el objeto enriquecido usando el parámetro `threshold`.
-  - En `StockAlerts.tsx`, ajustar `computeReplenishment` para usar `min_stock` como amortiguador de seguridad cuando no hay ventas, y forzar `semanas_restantes = 0` si el stock actual es 0.
-  - En la interfaz de usuario de `StockAlerts.tsx`, cambiar la visualización de `∞` a `—` cuando no haya ventas del producto para mejorar la legibilidad y coherencia visual.
+*   **Corrección de Predicción de Reposición**:
+    *   **Backend (Express)**: Se modificó `/reports/inventario/top-salidas` en `reports.routes.js` para soportar el parámetro de consulta `days` y filtrar los movimientos por fecha usando `NOW() - make_interval(days => $1::int)`.
+    *   **Frontend (Astro & React)**:
+        - En `reposicion.ts` (Astro API proxy), se propaga `min_stock` en el objeto enriquecido usando el parámetro `threshold`.
+        - En `StockAlerts.tsx`, se ajustó `computeReplenishment` para usar `min_stock` como amortiguador de seguridad cuando no hay ventas, sugiriendo la compra de `min_stock - stock_actual + 1` unidades para superar el umbral de alerta, y forzando `semanas_restantes = 0` si el stock es 0.
+        - En `StockAlerts.tsx` UI, se cambió la visualización de `∞` a `—` cuando no haya ventas del producto para mejorar la consistencia visual y se corrigió el texto del umbral a `≤` para coincidir con la consulta de base de datos.
+*   **Solución de Error de Despliegue en Vercel**:
+    *   Se eliminó la carpeta `.vercel` del historial de Git (`git rm -r --cached .vercel`) y se agregó a `.gitignore` para evitar que las configuraciones y compilaciones locales de Windows se suban al repositorio y rompan la compilación nativa de Vercel en la nube (error `ERR_MODULE_NOT_FOUND: entry.mjs`).
+
+
 

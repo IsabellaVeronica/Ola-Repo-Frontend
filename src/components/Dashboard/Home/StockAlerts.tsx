@@ -39,7 +39,7 @@ function computeReplenishment(item: ReplenishmentItem): ComputedItem {
     const safetyBuffer = item.min_stock || 0;
     const cantidad_recomendada = ventas_por_semana > 0
         ? Math.max(0, Math.ceil(ventas_por_semana * targetWeeks + safetyBuffer - item.stock_actual))
-        : Math.max(0, safetyBuffer - item.stock_actual);
+        : Math.max(0, safetyBuffer - item.stock_actual + 1);
 
     // Urgency level
     let urgency: 'critical' | 'high' | 'medium' = 'medium';
@@ -158,7 +158,7 @@ export const StockAlerts: React.FC = () => {
                     </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                    Basado en el movimiento de los últimos <strong>{days} días</strong>. Umbral: &lt; {threshold} uds.
+                    Basado en el movimiento de los últimos <strong>{days} días</strong>. Umbral: &le; {threshold} uds.
                 </p>
 
                 {/* Summary chips */}
