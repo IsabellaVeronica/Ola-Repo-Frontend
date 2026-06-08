@@ -287,3 +287,5 @@ export const StockAlerts: React.FC = () => {
         </div>
     );
 };
+// Force Vercel rebuild trigger
+
