@@ -26,15 +26,33 @@ This project is a static-first web application built with Astro.js. It is design
 - **Selección de Moneda y Auto-Cálculo**: Se refinó la interfaz de pagos mixtos para permitir seleccionar la moneda de pago de un menú desplegable (USD, VES, COP) y digitar el monto en USD ($), calculando automáticamente el equivalente en la divisa seleccionada mediante la tasa de cambio, y filtrando las cuentas destino correspondientes.
 - **Creación de Reportes como Módulo Independiente**: Integrado con éxito en el Sidebar del Dashboard.
 - **Área de Inteligencia Financiera**: Integración de los KPIs de Ventas y Ganancias, resumen de facturación semanal del mes actual y gráfico temporal en la pestaña "Ventas y Ganancias" del módulo de reportes.
-
-*   **Corrección de Predicción de Reposición**:
-    *   **Backend (Express)**: Se modificó `/reports/inventario/top-salidas` en `reports.routes.js` para soportar el parámetro de consulta `days` y filtrar los movimientos por fecha usando `NOW() - make_interval(days => $1::int)`.
+- **Corrección de Predicción de Reposición**:
+    *   **Backend (Express)**: Se modificó `/reports/inventario/top-salidas` en `reports.routes.js` para soportar el parámetro de consulta `days` y filtrar los movimientos por fecha.
     *   **Frontend (Astro & React)**:
-        - En `reposicion.ts` (Astro API proxy), se propaga `min_stock` en el objeto enriquecido usando el parámetro `threshold`.
-        - En `StockAlerts.tsx`, se ajustó `computeReplenishment` para usar `min_stock` como amortiguador de seguridad cuando no hay ventas, sugiriendo la compra de `min_stock - stock_actual + 1` unidades para superar el umbral de alerta, y forzando `semanas_restantes = 0` si el stock es 0.
-        - En `StockAlerts.tsx` UI, se cambió la visualización de `∞` a `—` cuando no haya ventas del producto para mejorar la consistencia visual y se corrigió el texto del umbral a `≤` para coincidir con la consulta de base de datos.
-*   **Solución de Error de Despliegue en Vercel**:
-    *   Se eliminó la carpeta `.vercel` del historial de Git (`git rm -r --cached .vercel`) y se agregó a `.gitignore` para evitar que las configuraciones y compilaciones locales de Windows se suban al repositorio y rompan la compilación nativa de Vercel en la nube (error `ERR_MODULE_NOT_FOUND: entry.mjs`).
+        - En `reposicion.ts`, se propaga `min_stock` en el objeto enriquecido usando el parámetro `threshold`.
+        - En `StockAlerts.tsx`, se ajustó `computeReplenishment` para usar `min_stock` como amortiguador de seguridad cuando no hay ventas.
+        - En `StockAlerts.tsx` UI, se cambió la visualización de `∞` a `—` cuando no haya ventas.
+- **Solución de Error de Despliegue en Vercel**:
+    *   Se eliminó la carpeta `.vercel` del historial de Git (`git rm -r --cached .vercel`) y se agregó a `.gitignore`.
 
+## Plan for Current Change: Optional Prices, Empty Barcodes & Exclude Consumibles from Storefront
 
+### Goals & Features to Implement:
+1. **Omit Barcode Requirement**: Allow imports from Excel even if the barcode column is blank, relying on system-generated SKUs.
+2. **Optional Pricing**: 
+   - Make prices and cost optional during product/variant creation and editing.
+   - Store prices and cost as `NULL` if not specified.
+   - Implement an interactive **Suggested Price** tool (`+30%`, `+40%`, etc.) under the price/cost input in the variant manager and bulk queue editor to calculate the list price based on the input cost.
+3. **Exclude Consumibles from Public Catalog**:
+   - Filter out products in the category "Consumibles" from appearing in `/catalog/products` and `/catalog/top-sellers`.
+   - Filter out the "Consumibles" category itself from `/catalog/categories` in the public storefront.
+   - Return 404 for `/catalog/products/:id` if the requested product is a consumable.
 
+### Actionable Steps:
+1. **Backend - catalog.routes.js**:
+   - In `/catalog/categories`, exclude `'Consumibles'` by name.
+   - In `/catalog/products`, `/catalog/products/:id`, and `/catalog/top-sellers`, query public category names and filter out products belonging to `'Consumibles'`.
+2. **Frontend - ProductVariantsTab.tsx & BulkCreateProducts.tsx**:
+   - Make `precio_lista` and `costo` fields non-required.
+   - Set up empty value formatting to save fields as `null` (instead of `0`) when editing or adding variants.
+   - Build a helper UI component under price/cost inputs that takes `costo`, calculates price based on selected percentage, and updates the state.

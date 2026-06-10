@@ -349,8 +349,8 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
                 // 1. Actualizar información básica
                 await FetchData(API_ENDPOINTS.VARIANTS.ITEM(v.id_variante_producto), 'PATCH', {
                     body: {
-                        precio_lista: parseFloat(v.precio_lista) || 0,
-                        costo: parseFloat(v.costo) || 0,
+                        precio_lista: (v.precio_lista === '' || v.precio_lista === null || v.precio_lista === undefined) ? null : (parseFloat(v.precio_lista) || 0),
+                        costo: (v.costo === '' || v.costo === null || v.costo === undefined) ? null : (parseFloat(v.costo) || 0),
                         codigo_barras: v.codigo_barras,
                         atributos_json: (v.atributos || []).reduce((acc: any, curr: any) => {
                             if (curr.key) acc[curr.key] = curr.value;
@@ -414,8 +414,8 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
     };
 
     const createNewVariant = async () => {
-        if (!session || !newVariant.nombre || !newVariant.precio) {
-            alert("Nombre y precio son obligatorios");
+        if (!session || !newVariant.nombre) {
+            alert("Nombre es obligatorio");
             return;
         }
 
@@ -425,8 +425,8 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
             await FetchData(API_ENDPOINTS.INVENTORY.ADD_VARIANT(id), 'POST', {
                 body: {
                     nombre_variante: newVariant.nombre || 'Nueva Variante',
-                    precio_lista: parseFloat(newVariant.precio),
-                    costo: parseFloat(newVariant.costo) || 0,
+                    precio_lista: newVariant.precio === '' ? null : (parseFloat(newVariant.precio) || 0),
+                    costo: newVariant.costo === '' ? null : (parseFloat(newVariant.costo) || 0),
                     codigo_barras: newVariant.barcode,
                     atributos: newVariant.atributos.reduce((acc: any, curr: any) => {
                         if (curr.key) acc[curr.key] = curr.value;
@@ -997,12 +997,54 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
                                                 </div>
                                                 
                                                 <div className="space-y-1">
-                                                    <Label className="text-[10px] uppercase font-bold ml-1">Costo ($)</Label>
+                                                    <Label className="text-[10px] uppercase font-bold ml-1">Costo ($) (Opcional)</Label>
                                                     <Input type="number" placeholder="0.00" value={newVariant.costo} onChange={e => setNewVariant({...newVariant, costo: e.target.value})} />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <Label className="text-[10px] uppercase font-bold ml-1">Precio ($)</Label>
+                                                    <Label className="text-[10px] uppercase font-bold ml-1">Precio ($) (Opcional)</Label>
                                                     <Input type="number" placeholder="0.00" value={newVariant.precio} onChange={e => setNewVariant({...newVariant, precio: e.target.value})} />
+                                                </div>
+
+                                                {/* Herramienta de Margen de Ganancia para nueva variante */}
+                                                <div className="col-span-2 border border-dashed rounded-xl p-2 bg-muted/10 space-y-1 mt-1">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[9px] font-bold text-muted-foreground">Calcular precio sugerido (% sobre costo)</span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5 items-center">
+                                                        {['30', '40', '50', '100'].map((pct) => (
+                                                            <Button
+                                                                key={pct}
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-6 text-[8px] px-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                                                                onClick={() => {
+                                                                    const costVal = parseFloat(newVariant.costo);
+                                                                    if (!isNaN(costVal) && costVal > 0) {
+                                                                        const calculated = costVal * (1 + parseFloat(pct) / 100);
+                                                                        setNewVariant({...newVariant, precio: calculated.toFixed(2)});
+                                                                    }
+                                                                }}
+                                                            >
+                                                                +{pct}%
+                                                            </Button>
+                                                        ))}
+                                                        <div className="flex items-center gap-1 ml-auto">
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="Otro %"
+                                                                className="h-6 text-[8px] w-14 px-1.5 py-0"
+                                                                onChange={(e) => {
+                                                                    const pctVal = parseFloat(e.target.value);
+                                                                    const costVal = parseFloat(newVariant.costo);
+                                                                    if (!isNaN(pctVal) && !isNaN(costVal) && costVal > 0) {
+                                                                        const calculated = costVal * (1 + pctVal / 100);
+                                                                        setNewVariant({...newVariant, precio: calculated.toFixed(2)});
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div className="col-span-2 space-y-2 border-t pt-2 mt-2">
@@ -1113,22 +1155,70 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
 
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-[10px] uppercase font-black text-muted-foreground ml-1">Costo ($)</Label>
+                                                        <Label className="text-[10px] uppercase font-black text-muted-foreground ml-1">Costo ($) (Opcional)</Label>
                                                         <Input 
                                                             type="number" 
                                                             className="h-10 bg-background" 
-                                                            value={v.costo ?? 0} 
+                                                            value={v.costo ?? ''} 
                                                             onChange={(e) => handleVariantFieldChange(i, 'costo', e.target.value)}
+                                                            placeholder="Ej: 10.00"
                                                         />
                                                     </div>
                                                     <div className="space-y-1.5">
-                                                        <Label className="text-[10px] uppercase font-black text-muted-foreground ml-1">Precio ($)</Label>
+                                                        <Label className="text-[10px] uppercase font-black text-muted-foreground ml-1">Precio ($) (Opcional)</Label>
                                                         <Input 
                                                             type="number" 
                                                             className="precio-lista h-10 bg-background font-bold text-primary border-primary/20" 
-                                                            value={v.precio_lista} 
+                                                            value={v.precio_lista ?? ''} 
                                                             onChange={(e) => handleVariantFieldChange(i, 'precio_lista', e.target.value)}
+                                                            placeholder="Ej: 15.00"
                                                         />
+                                                    </div>
+                                                </div>
+
+                                                {/* Herramienta de Margen de Ganancia */}
+                                                <div className="border border-dashed rounded-xl p-3 bg-muted/20 space-y-2 mt-1">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-[10px] font-bold text-muted-foreground">Calcular precio sugerido (% sobre costo)</span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-1.5 items-center">
+                                                        {['30', '40', '50', '100'].map((pct) => (
+                                                            <Button
+                                                                key={pct}
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="h-7 text-[9px] px-2.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                                                                onClick={() => {
+                                                                    const costVal = parseFloat(v.costo);
+                                                                    if (!isNaN(costVal) && costVal > 0) {
+                                                                        const calculated = costVal * (1 + parseFloat(pct) / 100);
+                                                                        const newVariants = [...variantes];
+                                                                        newVariants[i].precio_lista = parseFloat(calculated.toFixed(2));
+                                                                        setVariantes(newVariants);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                +{pct}%
+                                                            </Button>
+                                                        ))}
+                                                        <div className="flex items-center gap-1 ml-auto">
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="Otro %"
+                                                                className="h-7 text-[9px] w-16 px-1.5 py-0"
+                                                                onChange={(e) => {
+                                                                    const pctVal = parseFloat(e.target.value);
+                                                                    const costVal = parseFloat(v.costo);
+                                                                    if (!isNaN(pctVal) && !isNaN(costVal) && costVal > 0) {
+                                                                        const calculated = costVal * (1 + pctVal / 100);
+                                                                        const newVariants = [...variantes];
+                                                                        newVariants[i].precio_lista = parseFloat(calculated.toFixed(2));
+                                                                        setVariantes(newVariants);
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
 

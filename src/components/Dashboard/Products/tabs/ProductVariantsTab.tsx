@@ -129,8 +129,8 @@ export const ProductVariantsTab: React.FC<ProductVariantsTabProps> = ({ product 
         try {
             const payload = {
                 sku: formData.sku === '[ GENERACIÓN AUTOMÁTICA ]' ? undefined : formData.sku,
-                precio_lista: parseFloat(formData.precio_lista) || 0,
-                costo: parseFloat(formData.costo) || 0,
+                precio_lista: formData.precio_lista === '' ? null : (parseFloat(formData.precio_lista) || 0),
+                costo: formData.costo === '' ? null : (parseFloat(formData.costo) || 0),
                 codigo_barras: formData.codigo_barras,
                 atributos_json: formData.atributos.reduce((acc, curr) => {
                     if (curr.key) acc[curr.key] = curr.value;
@@ -270,22 +270,64 @@ export const ProductVariantsTab: React.FC<ProductVariantsTabProps> = ({ product 
                             )}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="grid gap-2">
-                                    <Label>Precio Lista</Label>
+                                    <Label>Precio Lista (Opcional)</Label>
                                     <Input
                                         type="number" step="0.01" min="0"
                                         value={formData.precio_lista}
                                         onChange={e => setFormData({ ...formData, precio_lista: e.target.value })}
-                                        required
+                                        placeholder="Ej: 15.00"
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label>Costo Unitario</Label>
+                                    <Label>Costo Unitario (Opcional)</Label>
                                     <Input
                                         type="number" step="0.01" min="0"
                                         value={formData.costo}
                                         onChange={e => setFormData({ ...formData, costo: e.target.value })}
-                                        required
+                                        placeholder="Ej: 10.00"
                                     />
+                                </div>
+                            </div>
+
+                            {/* Herramienta de Margen de Ganancia */}
+                            <div className="border rounded-lg p-3 bg-muted/40 space-y-2">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-muted-foreground">Calcular precio sugerido (% sobre costo)</span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 items-center">
+                                    {['30', '40', '50', '100'].map((pct) => (
+                                        <Button
+                                            key={pct}
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 text-[10px] px-2.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                                            onClick={() => {
+                                                const costVal = parseFloat(formData.costo);
+                                                if (!isNaN(costVal) && costVal > 0) {
+                                                    const calculated = costVal * (1 + parseFloat(pct) / 100);
+                                                    setFormData({ ...formData, precio_lista: calculated.toFixed(2) });
+                                                }
+                                            }}
+                                        >
+                                            +{pct}%
+                                        </Button>
+                                    ))}
+                                    <div className="flex items-center gap-1.5 ml-auto">
+                                        <Input
+                                            type="number"
+                                            placeholder="Otro %"
+                                            className="h-7 text-[10px] w-16 px-1.5 py-0"
+                                            onChange={(e) => {
+                                                const pctVal = parseFloat(e.target.value);
+                                                const costVal = parseFloat(formData.costo);
+                                                if (!isNaN(pctVal) && !isNaN(costVal) && costVal > 0) {
+                                                    const calculated = costVal * (1 + pctVal / 100);
+                                                    setFormData({ ...formData, precio_lista: calculated.toFixed(2) });
+                                                }
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                             <div className="grid gap-2">
