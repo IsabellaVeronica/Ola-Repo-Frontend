@@ -61,6 +61,7 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
     const [importErrors, setImportErrors] = useState<any[]>([]);
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [importSummary, setImportSummary] = useState<any | null>(null);
+    const [costPercentage, setCostPercentage] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Toggle for manual quick load vs Excel loader
@@ -531,13 +532,36 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
         try {
             const formData = new FormData();
             formData.append('file', file);
+            if (costPercentage) {
+                formData.append('cost_percentage', costPercentage);
+            }
 
             const response = await FetchData<any>(API_ENDPOINTS.INVENTORY.IMPORT_EXCEL, 'POST', {
                 body: formData
             });
 
-            setImportSummary(response.summary);
-            setFile(null);
+            if (response.session_id && response.productos_ids && response.productos_ids.length > 0) {
+                const sessionData: SessionData = {
+                    sessionId: response.session_id,
+                    productosIds: response.productos_ids,
+                    indiceActual: 0,
+                    productosCargados: response.productos_cargados || [],
+                    createdAt: new Date().toISOString()
+                };
+                setSession(sessionData);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+                
+                await loadProductForEditor(0);
+                setStep('editor');
+                setCostPercentage('');
+                setFile(null);
+                if (onImportSuccess) onImportSuccess();
+            } else {
+                setImportSummary(response.summary);
+                setFile(null);
+                setCostPercentage('');
+                if (onImportSuccess) onImportSuccess();
+            }
         } catch (err: any) {
             if (err instanceof HttpError) {
                 if (err.status === 400 && err.data?.errors) {
@@ -766,17 +790,36 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
                                             />
                                         </label>
                                     ) : (
-                                        <div className="p-5 rounded-2xl border-2 border-secondary/20 bg-secondary/5 flex items-center gap-3">
-                                            <div className="p-3 bg-secondary/15 text-secondary rounded-xl">
-                                                <FileIcon className="h-8 w-8 text-secondary" />
+                                        <div className="w-full space-y-4">
+                                            <div className="p-5 rounded-2xl border-2 border-secondary/20 bg-secondary/5 flex items-center gap-3">
+                                                <div className="p-3 bg-secondary/15 text-secondary rounded-xl">
+                                                    <FileIcon className="h-8 w-8 text-secondary" />
+                                                </div>
+                                                <div className="flex-1 min-w-0 text-left">
+                                                    <p className="text-sm font-bold truncate">{file.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+                                                </div>
+                                                <Button variant="ghost" size="icon" className="hover:bg-secondary/25 text-muted-foreground" onClick={() => setFile(null)} disabled={loading}>
+                                                    <X className="h-5 w-5" />
+                                                </Button>
                                             </div>
-                                            <div className="flex-1 min-w-0 text-left">
-                                                <p className="text-sm font-bold truncate">{file.name}</p>
-                                                <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+
+                                            <div className="space-y-2 text-left border-t border-secondary/10 pt-4">
+                                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                                    Porcentaje de recargo al costo (ej. % de Envío):
+                                                </label>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Ej: 10 para aumentar 10% el costo de los productos"
+                                                    value={costPercentage}
+                                                    onChange={(e) => setCostPercentage(e.target.value)}
+                                                    className="bg-muted/50 border-border/60"
+                                                    disabled={loading}
+                                                />
+                                                <p className="text-[10px] text-muted-foreground/80">
+                                                    Opcional. Si se especifica, se incrementará el costo unitario de todos los productos en este porcentaje antes de iniciar la edición.
+                                                </p>
                                             </div>
-                                            <Button variant="ghost" size="icon" className="hover:bg-secondary/25 text-muted-foreground" onClick={() => setFile(null)} disabled={loading}>
-                                                <X className="h-5 w-5" />
-                                            </Button>
                                         </div>
                                     )}
                                 </div>
