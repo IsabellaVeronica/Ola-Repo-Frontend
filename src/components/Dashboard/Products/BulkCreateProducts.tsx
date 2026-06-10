@@ -89,6 +89,42 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
     const [newCatName, setNewCatName] = useState("");
     const [newBrandName, setNewBrandName] = useState("");
     
+    const [cargas, setCargas] = useState<any[]>([]);
+
+    const fetchCargas = async () => {
+        try {
+            const data = await FetchData<any[]>(API_ENDPOINTS.INVENTORY.CARGAS, 'GET');
+            setCargas(data || []);
+        } catch (e) {
+            console.error("Failed to load historical import batches", e);
+        }
+    };
+
+    useEffect(() => {
+        fetchCargas();
+    }, [step]);
+
+    const handleEditCargaInQueue = async (carga: any) => {
+        if (!carga.productos_activos || carga.productos_activos.length === 0) {
+            alert("No hay productos activos en esta carga para editar.");
+            return;
+        }
+
+        const sessionData: SessionData = {
+            sessionId: carga.session_id,
+            productosIds: carga.productos_activos,
+            indiceActual: 0,
+            productosCargados: [],
+            createdAt: carga.fecha
+        };
+
+        setSession(sessionData);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
+        
+        await loadProductForEditor(0);
+        setStep('editor');
+    };
+    
     // Alias para el usuario
     const agregarFila = () => setInputs([...inputs, { nombre: '', descripcion: '' }]);
 
@@ -890,10 +926,93 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
                             </div>
 
                             {/* Toggle button for manual load */}
-                            <div className="text-center pt-4">
+                            <div className="text-center pt-4 pb-8">
                                 <Button variant="link" className="text-primary font-medium hover:underline text-xs" onClick={() => setUseManualLoad(true)}>
                                     ¿Prefieres ingresar productos manualmente? Usar Carga Rápida Manual
                                 </Button>
+                            </div>
+
+                            {/* Loads log panel */}
+                            <div className="bg-card p-6 rounded-3xl border shadow-sm max-w-4xl mx-auto space-y-6">
+                                <div className="flex justify-between items-center border-b pb-4">
+                                    <div className="space-y-1 text-left">
+                                        <h3 className="text-sm font-bold">Registro de Cargas Masivas</h3>
+                                        <p className="text-[11px] text-muted-foreground">Historial de importaciones manuales y por Excel. Puedes retomar la edición en cola de cualquier carga activa.</p>
+                                    </div>
+                                    <Button variant="outline" size="sm" onClick={fetchCargas} className="h-7 text-xs gap-1">
+                                        <Loader2 className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+                                        Actualizar
+                                    </Button>
+                                </div>
+
+                                {cargas.length === 0 ? (
+                                    <p className="text-center text-xs text-muted-foreground py-6">No hay registros de cargas masivas anteriores.</p>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse text-xs">
+                                            <thead>
+                                                <tr className="border-b border-border/40 text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
+                                                    <th className="pb-3 pr-4">Fecha</th>
+                                                    <th className="pb-3 pr-4">Tipo</th>
+                                                    <th className="pb-3 pr-4">Archivo / Detalle</th>
+                                                    <th className="pb-3 pr-4 text-center">Productos</th>
+                                                    <th className="pb-3 text-right">Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {cargas.map((c, i) => {
+                                                    const dateStr = new Date(c.fecha).toLocaleString('es-ES', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    });
+                                                    const isExcel = c.tipo === 'Excel';
+                                                    const hasActive = c.productos_activos && c.productos_activos.length > 0;
+
+                                                    return (
+                                                        <tr key={i} className="border-b border-border/20 last:border-0 hover:bg-muted/30 transition-colors">
+                                                            <td className="py-3 pr-4 text-muted-foreground">{dateStr}</td>
+                                                            <td className="py-3 pr-4">
+                                                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                                                                    isExcel ? 'bg-emerald-500/10 text-emerald-600' : 'bg-blue-500/10 text-blue-600'
+                                                                }`}>
+                                                                    {c.tipo}
+                                                                </span>
+                                                            </td>
+                                                            <td className="py-3 pr-4 font-semibold text-foreground max-w-[200px] truncate" title={isExcel ? c.archivo : 'Carga Rápida'}>
+                                                                {isExcel ? (c.archivo || 'Importación Excel') : 'Carga Manual'}
+                                                            </td>
+                                                            <td className="py-3 pr-4 text-center">
+                                                                <span className="font-bold">{c.productos_activos ? c.productos_activos.length : 0}</span>
+                                                                <span className="text-muted-foreground"> / {c.total_productos}</span>
+                                                            </td>
+                                                            <td className="py-3 text-right">
+                                                                {hasActive ? (
+                                                                    <Button 
+                                                                        size="sm" 
+                                                                        variant="secondary"
+                                                                        onClick={() => handleEditCargaInQueue(c)}
+                                                                        className="h-7 text-[10px] font-bold px-3 gap-1 hover:bg-secondary/80 text-secondary-foreground"
+                                                                        disabled={loading}
+                                                                    >
+                                                                        <Layers className="h-3 w-3" />
+                                                                        Editar en Cola
+                                                                    </Button>
+                                                                ) : (
+                                                                    <span className="text-[10px] font-bold text-destructive px-2.5 py-1 bg-destructive/10 rounded-full">
+                                                                        Descartada
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
