@@ -788,12 +788,17 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
                                             <AlertCircle className="h-4 w-4" />
                                             <h4 className="text-xs font-bold">Errores en el archivo</h4>
                                         </div>
-                                        {importErrors.map((err, i) => (
-                                            <div key={i} className="text-[11px] p-2 rounded border border-red-500/10 bg-red-500/5 flex gap-2">
-                                                <span className="font-bold text-red-500 shrink-0">Fila {err.fila}</span>
-                                                <span className="text-foreground/80">{err.error}</span>
-                                            </div>
-                                        ))}
+                                        {importErrors.map((err, i) => {
+                                            const isString = typeof err === 'string';
+                                            const rowStr = isString ? (err.match(/^Fila (\d+):/)?.[1] || '') : String(err.fila || '');
+                                            const errText = isString ? err.replace(/^Fila \d+:\s*/, '') : err.error;
+                                            return (
+                                                <div key={i} className="text-[11px] p-2 rounded border border-red-500/10 bg-red-500/5 flex gap-2">
+                                                    <span className="font-bold text-red-500 shrink-0">Fila {rowStr}</span>
+                                                    <span className="text-foreground/80">{errText}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 )}
 

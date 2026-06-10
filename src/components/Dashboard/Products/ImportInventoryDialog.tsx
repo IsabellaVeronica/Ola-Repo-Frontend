@@ -223,12 +223,17 @@ export const ImportInventoryDialog = ({ onImportSuccess }: { onImportSuccess: ()
                                 <AlertTriangle className="h-4 w-4" />
                                 <h4 className="text-sm font-bold">Se encontraron errores en el archivo</h4>
                             </div>
-                            {errors.map((err, i) => (
-                                <div key={i} className="text-xs p-2.5 rounded border border-red-500/20 bg-red-500/5 flex gap-3">
-                                    <span className="font-bold text-red-500 w-12 shrink-0">Fila {err.fila}</span>
-                                    <span className="text-foreground/80">{err.error}</span>
-                                </div>
-                            ))}
+                            {errors.map((err, i) => {
+                                const isString = typeof err === 'string';
+                                const rowStr = isString ? (err.match(/^Fila (\d+):/)?.[1] || '') : String(err.fila || '');
+                                const errText = isString ? err.replace(/^Fila \d+:\s*/, '') : err.error;
+                                return (
+                                    <div key={i} className="text-xs p-2.5 rounded border border-red-500/20 bg-red-500/5 flex gap-3">
+                                        <span className="font-bold text-red-500 w-12 shrink-0">Fila {rowStr}</span>
+                                        <span className="text-foreground/80">{errText}</span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
 
