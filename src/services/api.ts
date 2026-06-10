@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
     BULK_CREATE: `/api/inventario/bulk/productos`,
     SETUP_PRODUCT: (id: string | number) => `/api/inventario/productos/${id}/setup`,
     CARGAS: `/api/inventario/cargas`,
+    AJUSTAR_COSTO: `/api/inventario/bulk/ajustar-costo`,
     UPDATE_SETUP: (id: string | number) => `/api/inventario/productos/${id}/marca`,
     ADD_VARIANT: (id: string | number) => `/api/inventario/productos/${id}/variantes`,
     BULK_IMAGES: (id: string | number) => `/api/products/${id}/images`,

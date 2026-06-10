@@ -211,6 +211,16 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
             try {
                 const data = JSON.parse(saved);
                 setSession(data);
+                if (data.autoStart) {
+                    const cleanedData = { ...data };
+                    delete cleanedData.autoStart;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedData));
+                    
+                    setStep('editor');
+                    setTimeout(() => {
+                        loadProductForEditor(0);
+                    }, 100);
+                }
             } catch (e) {
                 localStorage.removeItem(STORAGE_KEY);
             }

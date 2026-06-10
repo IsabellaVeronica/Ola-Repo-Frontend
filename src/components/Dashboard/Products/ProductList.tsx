@@ -10,12 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
     Search, Plus, Edit, Ban, CheckCircle, ChevronLeft, ChevronRight, Trash, Trash2,
-    CheckCircle2, AlertCircle
+    CheckCircle2, AlertCircle, Layers, Loader2
 } from 'lucide-react';
 import { FetchData } from '@/services/fetch';
 import { API_ENDPOINTS } from '@/services/api';
 import { CreateProductDialog } from './CreateProductDialog';
 import { EditProductDialog } from './EditProductDialog';
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -28,7 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Product } from '@/types';
 
-export const ProductList = () => {
+export const ProductList = ({ onSwitchToBulk }: { onSwitchToBulk?: () => void }) => {
     // Scaffold state
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
@@ -40,6 +50,12 @@ export const ProductList = () => {
     const [productToDelete, setProductToDelete] = useState<Product | null>(null); // For permanent deletion
     const [statusLoading, setStatusLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+    // Queue edit selection states
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isRecargoDialogOpen, setIsRecargoDialogOpen] = useState(false);
+    const [recargoPercentage, setRecargoPercentage] = useState<string>('');
+    const [bulkEditLoading, setBulkEditLoading] = useState(false);
 
     useEffect(() => {
         if (message) {
@@ -118,17 +134,75 @@ export const ProductList = () => {
         }
     };
 
+    const handleStartBulkQueue = async () => {
+        setBulkEditLoading(true);
+        try {
+            const pct = parseFloat(recargoPercentage);
+            if (!isNaN(pct) && pct > 0) {
+                // Llama al endpoint para ajustar el costo
+                await FetchData(API_ENDPOINTS.INVENTORY.AJUSTAR_COSTO, 'POST', {
+                    body: {
+                        ids_producto: selectedIds,
+                        cost_percentage: pct
+                    }
+                });
+            }
+
+            // Inicializar sesión en cola de edición masiva
+            const sessionData = {
+                sessionId: `bulk_edit_${Date.now()}`,
+                productosIds: selectedIds,
+                indiceActual: 0,
+                productosCargados: [],
+                createdAt: new Date().toISOString(),
+                autoStart: true
+            };
+
+            localStorage.setItem('productosCola', JSON.stringify(sessionData));
+
+            // Limpiar selección local y cerrar modal
+            setSelectedIds([]);
+            setRecargoPercentage('');
+            setIsRecargoDialogOpen(false);
+
+            // Cambiar a la pestaña de carga masiva
+            if (onSwitchToBulk) {
+                onSwitchToBulk();
+            }
+        } catch (error: any) {
+            console.error('Error starting bulk queue editor:', error);
+            setMessage({
+                type: 'error',
+                text: error.message || 'Error al ajustar costos o iniciar la cola.'
+            });
+        } finally {
+            setBulkEditLoading(false);
+        }
+    };
+
     return (
         <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-                <div className="relative w-full sm:w-72">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                        placeholder="Buscar productos..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 w-full"
-                    />
+                <div className="flex flex-1 flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+                    <div className="relative w-full sm:w-72">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                            placeholder="Buscar productos..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 w-full"
+                        />
+                    </div>
+                    {selectedIds.length > 0 && (
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsRecargoDialogOpen(true)}
+                            className="flex items-center gap-2 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-black shadow-lg h-10 px-4 rounded-md"
+                        >
+                            <Layers className="h-4 w-4" />
+                            Editar en Cola ({selectedIds.length})
+                        </Button>
+                    )}
                 </div>
                 <div className="w-full sm:w-auto">
                     <CreateProductDialog onProductCreated={fetchProducts} />
@@ -150,6 +224,14 @@ export const ProductList = () => {
                         <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[50px]">
+                                    <Checkbox
+                                        checked={products.length > 0 && selectedIds.length === products.length}
+                                        onCheckedChange={(checked) => {
+                                            setSelectedIds(checked ? products.map(p => p.id_producto) : []);
+                                        }}
+                                    />
+                                </TableHead>
                                 <TableHead className="whitespace-nowrap">Nombre</TableHead>
                                 <TableHead className="whitespace-nowrap">Categoría</TableHead>
                                 <TableHead className="whitespace-nowrap">Marca</TableHead>
@@ -162,19 +244,31 @@ export const ProductList = () => {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                                    <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                                         Cargando productos...
                                     </TableCell>
                                 </TableRow>
                             ) : products.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                                    <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                                         No se encontraron productos.
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 products.map((product) => (
                                     <TableRow key={product.id_producto}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedIds.includes(product.id_producto)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedIds(prev => [...prev, product.id_producto]);
+                                                    } else {
+                                                        setSelectedIds(prev => prev.filter(id => id !== product.id_producto));
+                                                    }
+                                                }}
+                                            />
+                                        </TableCell>
                                         <TableCell className="font-medium">{product.nombre}</TableCell>
                                         <TableCell>{product.category_name || product.Categoria?.nombre || '-'}</TableCell>
                                         <TableCell>{product.brand_name || product.Marca?.nombre || '-'}</TableCell>
@@ -241,6 +335,60 @@ export const ProductList = () => {
                 onProductUpdated={fetchProducts}
                 product={selectedProduct}
             />
+
+            <Dialog open={isRecargoDialogOpen} onOpenChange={setIsRecargoDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Recargo de Envío (Opcional)</DialogTitle>
+                        <DialogDescription>
+                            ¿Deseas agregar un porcentaje de recargo de envío al costo de los productos seleccionados antes de ingresar a la cola de edición?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="percentage" className="text-right">
+                                Porcentaje %
+                            </Label>
+                            <Input
+                                id="percentage"
+                                type="number"
+                                placeholder="Ej: 5"
+                                value={recargoPercentage}
+                                onChange={(e) => setRecargoPercentage(e.target.value)}
+                                className="col-span-3"
+                                min="0"
+                                step="any"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setIsRecargoDialogOpen(false);
+                                setRecargoPercentage('');
+                            }}
+                            disabled={bulkEditLoading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleStartBulkQueue}
+                            disabled={bulkEditLoading}
+                            className="bg-primary text-primary-foreground font-semibold"
+                        >
+                            {bulkEditLoading ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    Procesando...
+                                </>
+                            ) : (
+                                "Continuar a Cola"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <AlertDialog open={!!productToToggle} onOpenChange={() => setProductToToggle(null)}>
                 <AlertDialogContent>

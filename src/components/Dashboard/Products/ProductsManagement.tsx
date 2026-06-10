@@ -34,7 +34,7 @@ export const ProductsManagement = () => {
                 </div>
 
                 <TabsContent value="inventory" className="mt-6">
-                    <ProductList />
+                    <ProductList onSwitchToBulk={() => setActiveTab('bulk')} />
                 </TabsContent>
 
                 <TabsContent value="bulk" className="mt-6">
