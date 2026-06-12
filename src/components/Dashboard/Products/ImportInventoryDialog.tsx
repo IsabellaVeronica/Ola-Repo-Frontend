@@ -38,7 +38,7 @@ export const ImportInventoryDialog = ({ onImportSuccess }: { onImportSuccess: ()
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [summary, setSummary] = useState<ImportSummary | null>(null);
-    const [errors, setErrors] = useState<ImportError[]>([]);
+    const [errors, setErrors] = useState<any[]>([]);
     const [generalError, setGeneralError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 

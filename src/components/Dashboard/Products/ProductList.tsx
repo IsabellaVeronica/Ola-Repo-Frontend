@@ -137,15 +137,13 @@ export const ProductList = ({ onSwitchToBulk }: { onSwitchToBulk?: () => void })
     const handleStartBulkQueue = async () => {
         setBulkEditLoading(true);
         try {
-            const pct = parseFloat(recargoPercentage);
-            if (!isNaN(pct) && pct > 0) {
-                // Llama al endpoint para ajustar el costo
-                await FetchData(API_ENDPOINTS.INVENTORY.AJUSTAR_COSTO, 'POST', {
-                    body: {
-                        ids_producto: selectedIds,
-                        cost_percentage: pct
-                    }
-                });
+            const pctStr = recargoPercentage.trim();
+            if (pctStr !== "") {
+                const pct = parseFloat(pctStr);
+                if (isNaN(pct) || pct < 0) {
+                    alert("Porcentaje inválido. Debe ser un número mayor o igual a 0.");
+                    return;
+                }
             }
 
             // Inicializar sesión en cola de edición masiva
@@ -155,7 +153,9 @@ export const ProductList = ({ onSwitchToBulk }: { onSwitchToBulk?: () => void })
                 indiceActual: 0,
                 productosCargados: [],
                 createdAt: new Date().toISOString(),
-                autoStart: true
+                autoStart: true,
+                cost_percentage: pctStr || undefined,
+                savedProductIds: []
             };
 
             localStorage.setItem('productosCola', JSON.stringify(sessionData));
@@ -173,12 +173,13 @@ export const ProductList = ({ onSwitchToBulk }: { onSwitchToBulk?: () => void })
             console.error('Error starting bulk queue editor:', error);
             setMessage({
                 type: 'error',
-                text: error.message || 'Error al ajustar costos o iniciar la cola.'
+                text: error.message || 'Error al iniciar la cola.'
             });
         } finally {
             setBulkEditLoading(false);
         }
     };
+
 
     return (
         <div className="space-y-4">

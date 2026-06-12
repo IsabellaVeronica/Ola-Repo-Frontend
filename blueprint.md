@@ -35,24 +35,32 @@ This project is a static-first web application built with Astro.js. It is design
 - **Solución de Error de Despliegue en Vercel**:
     *   Se eliminó la carpeta `.vercel` del historial de Git (`git rm -r --cached .vercel`) y se agregó a `.gitignore`.
 
-## Plan for Current Change: Optional Prices, Empty Barcodes & Exclude Consumibles from Storefront
+- **Exclusión de Consumibles y Precios Opcionales**:
+    - Omitido el requerimiento de código de barras, usando SKU autogenerado por el sistema.
+    - Precios y costo hechos opcionales, guardados como `NULL` en base de datos.
+    - Añadida herramienta interactiva de Margen de Ganancia (+30%, +40%, etc.) en variante y cola.
+    - Excluidos los productos e información de categorías de "Consumibles" del catálogo público (retornando 404 para detalles de producto).
+
+## Plan for Current Change: General Queue Editing with Product Selector & Cost Surcharge
 
 ### Goals & Features to Implement:
-1. **Omit Barcode Requirement**: Allow imports from Excel even if the barcode column is blank, relying on system-generated SKUs.
-2. **Optional Pricing**: 
-   - Make prices and cost optional during product/variant creation and editing.
-   - Store prices and cost as `NULL` if not specified.
-   - Implement an interactive **Suggested Price** tool (`+30%`, `+40%`, etc.) under the price/cost input in the variant manager and bulk queue editor to calculate the list price based on the input cost.
-3. **Exclude Consumibles from Public Catalog**:
-   - Filter out products in the category "Consumibles" from appearing in `/catalog/products` and `/catalog/top-sellers`.
-   - Filter out the "Consumibles" category itself from `/catalog/categories` in the public storefront.
-   - Return 404 for `/catalog/products/:id` if the requested product is a consumable.
+1. **Dedicated Queue Editing Tab**:
+   - Provide an option inside `ProductsManagement` to start general queue editing anytime.
+   - Design a product selector component (`QueueEditSelector.tsx`) with search, listing, individual checkbox, and a "select all" ("marcar todos") checkbox.
+2. **Cost Surcharge Dialog**:
+   - Prompt the user with a dialog to optionally increase the cost by a percentage before starting the queue edit.
+3. **Dynamic Frontend Surcharge Reflection**:
+   - Save the surcharge percentage in the session.
+   - Apply the percentage to the variant costs in the frontend state when loading.
+   - Keep the inputs fully editable within the session.
+   - Save the final edited costs to the database only when clicking "Guardar y Sig." (Save & Next).
 
 ### Actionable Steps:
-1. **Backend - catalog.routes.js**:
-   - In `/catalog/categories`, exclude `'Consumibles'` by name.
-   - In `/catalog/products`, `/catalog/products/:id`, and `/catalog/top-sellers`, query public category names and filter out products belonging to `'Consumibles'`.
-2. **Frontend - ProductVariantsTab.tsx & BulkCreateProducts.tsx**:
-   - Make `precio_lista` and `costo` fields non-required.
-   - Set up empty value formatting to save fields as `null` (instead of `0`) when editing or adding variants.
-   - Build a helper UI component under price/cost inputs that takes `costo`, calculates price based on selected percentage, and updates the state.
+1. **Frontend - QueueEditSelector.tsx**:
+   - Create a clean selection layout listing products, filtering by query, select/deselect all, and starting bulk queue with surcharge modal.
+2. **Frontend - ProductsManagement.tsx**:
+   - Register the "Edición en Cola" tab and link it to the selection view.
+3. **Frontend - ProductList.tsx & BulkCreateProducts.tsx**:
+   - Modify the queue setup to save `cost_percentage` in `localStorage`.
+   - Update `BulkCreateProducts` editor to load and pre-calculate costs dynamically with surcharge, ensuring it only runs for unsaved products.
+

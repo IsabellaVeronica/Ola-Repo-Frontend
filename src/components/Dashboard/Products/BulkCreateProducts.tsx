@@ -50,6 +50,8 @@ interface SessionData {
     indiceActual: number;
     productosCargados: any[];
     createdAt: string;
+    cost_percentage?: string;
+    savedProductIds?: number[];
 }
 
 export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () => void }) => {
@@ -298,14 +300,26 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
         }
     };
 
+    const getLatestSession = (): SessionData | null => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return null;
+        try {
+            return JSON.parse(saved);
+        } catch {
+            return null;
+        }
+    };
+
     const startQueueEditor = async () => {
-        if (!session) return;
+        const currentSession = getLatestSession();
+        if (!currentSession) return;
         setStep('editor');
         await loadProductForEditor(0);
     };
 
     const loadProductForEditor = async (index: number, preserveLocalSelection: boolean = false) => {
-        if (!session) return;
+        const currentSession = getLatestSession();
+        if (!currentSession) return;
         setLoading(true);
         setLoadError(null);
         setSelectedImages([]);
@@ -313,7 +327,7 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
         setShowNewVariantForm(false);
 
         try {
-            const id = session.productosIds[index];
+            const id = currentSession.productosIds[index];
             const data = await FetchData<any>(API_ENDPOINTS.INVENTORY.SETUP_PRODUCT(id), 'GET');
             
             setCurrentProductData(data);
@@ -324,15 +338,28 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
                 setSelectedMarca(String(data.producto.id_marca || ""));
             }
             
-            const variantsWithAttrs = (data.variantes || []).map((v: any) => ({
-                ...v,
-                stock_inicial: v.stock_actual || 0,
-                atributos: v.atributos_json ? Object.entries(v.atributos_json).map(([key, value]) => ({ key, value })) : []
-            }));
+            const savedIds = currentSession.savedProductIds || [];
+            const isAlreadySaved = savedIds.includes(id);
+
+            const variantsWithAttrs = (data.variantes || []).map((v: any) => {
+                let initialCost = v.costo;
+                if (currentSession.cost_percentage && !isAlreadySaved && initialCost !== null && initialCost !== undefined) {
+                    const pct = parseFloat(currentSession.cost_percentage);
+                    if (!isNaN(pct) && pct > 0) {
+                        initialCost = Number((initialCost * (1 + pct / 100)).toFixed(2));
+                    }
+                }
+                return {
+                    ...v,
+                    costo: initialCost,
+                    stock_inicial: v.stock_actual || 0,
+                    atributos: v.atributos_json ? Object.entries(v.atributos_json).map(([key, value]) => ({ key, value })) : []
+                };
+            });
             
             setVariantes(variantsWithAttrs);
             
-            const newSession = { ...session, indiceActual: index };
+            const newSession = { ...currentSession, indiceActual: index };
             setSession(newSession);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession));
         } catch (e: any) {
@@ -365,7 +392,8 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
     };
 
     const saveCurrentProduct = async () => {
-        if (!session || !currentProductData) return false;
+        const currentSession = getLatestSession();
+        if (!currentSession || !currentProductData) return false;
         
         if (!selectedCategoria || !selectedMarca) {
             alert("Selecciona categoría y marca");
@@ -374,7 +402,7 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
 
         setLoading(true);
         try {
-            const id = session.productosIds[session.indiceActual];
+            const id = currentSession.productosIds[currentSession.indiceActual];
             
             await FetchData(API_ENDPOINTS.INVENTORY.UPDATE_SETUP(id), 'PUT', {
                 body: {
@@ -424,6 +452,17 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
             });
             await Promise.all(variantPromises);
             
+            // Agregar el producto actual a la lista de guardados en la sesión de localStorage
+            const savedIds = currentSession.savedProductIds || [];
+            if (!savedIds.includes(id)) {
+                const updatedSession = {
+                    ...currentSession,
+                    savedProductIds: [...savedIds, id]
+                };
+                setSession(updatedSession);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSession));
+            }
+
             return true;
         } catch (e: any) {
             alert("Error al guardar: " + e.message);
@@ -437,8 +476,9 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
         const ok = await saveCurrentProduct();
         if (!ok) return;
 
-        if (session && session.indiceActual + 1 < session.productosIds.length) {
-            await loadProductForEditor(session.indiceActual + 1);
+        const currentSession = getLatestSession();
+        if (currentSession && currentSession.indiceActual + 1 < currentSession.productosIds.length) {
+            await loadProductForEditor(currentSession.indiceActual + 1);
         } else {
             setStep('fin');
             localStorage.removeItem(STORAGE_KEY);
@@ -446,14 +486,16 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
     };
 
     const prevProduct = async () => {
-        if (session && session.indiceActual > 0) {
-            await loadProductForEditor(session.indiceActual - 1);
+        const currentSession = getLatestSession();
+        if (currentSession && currentSession.indiceActual > 0) {
+            await loadProductForEditor(currentSession.indiceActual - 1);
         }
     };
 
     const skipProduct = async () => {
-        if (session && session.indiceActual + 1 < session.productosIds.length) {
-            await loadProductForEditor(session.indiceActual + 1);
+        const currentSession = getLatestSession();
+        if (currentSession && currentSession.indiceActual + 1 < currentSession.productosIds.length) {
+            await loadProductForEditor(currentSession.indiceActual + 1);
         } else {
             setStep('fin');
             localStorage.removeItem(STORAGE_KEY);

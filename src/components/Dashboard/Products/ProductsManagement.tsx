@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProductList } from './ProductList';
 import { ManageTaxonomies } from '../Taxonomies/ManageTaxonomies';
-import { Box, Tags, UploadCloud } from 'lucide-react';
+import { Box, Tags, UploadCloud, Layers } from 'lucide-react';
 import { BulkCreateProducts } from './BulkCreateProducts';
+import { QueueEditSelector } from './QueueEditSelector';
 
 export const ProductsManagement = () => {
     const [activeTab, setActiveTab] = useState('inventory');
@@ -23,18 +24,24 @@ export const ProductsManagement = () => {
                         <TabsTrigger value="inventory" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
                             <Box className="h-4 w-4" /> Productos
                         </TabsTrigger>
+                        <TabsTrigger value="queue-edit" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <Layers className="h-4 w-4" /> Edición en Cola
+                        </TabsTrigger>
                         <TabsTrigger value="bulk" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
                             <UploadCloud className="h-4 w-4" /> Carga Masiva
                         </TabsTrigger>
                         <TabsTrigger value="taxonomies" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
                             <Tags className="h-4 w-4" /> Categorías y Marcas
                         </TabsTrigger>
-
                     </TabsList>
                 </div>
 
                 <TabsContent value="inventory" className="mt-6">
                     <ProductList onSwitchToBulk={() => setActiveTab('bulk')} />
+                </TabsContent>
+
+                <TabsContent value="queue-edit" className="mt-6">
+                    <QueueEditSelector onSwitchToBulk={() => setActiveTab('bulk')} />
                 </TabsContent>
 
                 <TabsContent value="bulk" className="mt-6">
@@ -44,9 +51,8 @@ export const ProductsManagement = () => {
                 <TabsContent value="taxonomies" className="mt-6">
                     <ManageTaxonomies />
                 </TabsContent>
-
-
             </Tabs>
         </div>
     );
 };
+
