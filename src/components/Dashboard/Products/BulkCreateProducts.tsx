@@ -52,6 +52,7 @@ interface SessionData {
     createdAt: string;
     cost_percentage?: string;
     savedProductIds?: number[];
+    isGeneralEdit?: boolean;
 }
 
 export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () => void }) => {
@@ -452,15 +453,27 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
             });
             await Promise.all(variantPromises);
             
-            // Agregar el producto actual a la lista de guardados en la sesión de localStorage
+            // Eliminar el producto guardado de la cola activa
+            const updatedIds = currentSession.productosIds.filter((prodId: number) => prodId !== id);
             const savedIds = currentSession.savedProductIds || [];
-            if (!savedIds.includes(id)) {
+            const newSavedIds = savedIds.includes(id) ? savedIds : [...savedIds, id];
+
+            if (updatedIds.length > 0) {
+                let newIndex = currentSession.indiceActual;
+                if (newIndex >= updatedIds.length) {
+                    newIndex = updatedIds.length - 1;
+                }
                 const updatedSession = {
                     ...currentSession,
-                    savedProductIds: [...savedIds, id]
+                    productosIds: updatedIds,
+                    indiceActual: newIndex,
+                    savedProductIds: newSavedIds
                 };
                 setSession(updatedSession);
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedSession));
+            } else {
+                localStorage.removeItem(STORAGE_KEY);
+                setSession(null);
             }
 
             return true;
@@ -477,11 +490,10 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
         if (!ok) return;
 
         const currentSession = getLatestSession();
-        if (currentSession && currentSession.indiceActual + 1 < currentSession.productosIds.length) {
-            await loadProductForEditor(currentSession.indiceActual + 1);
+        if (currentSession && currentSession.productosIds.length > 0) {
+            await loadProductForEditor(currentSession.indiceActual);
         } else {
             setStep('fin');
-            localStorage.removeItem(STORAGE_KEY);
         }
     };
 
@@ -667,6 +679,18 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
 
     const handleDiscardQueue = async () => {
         if (!session) return;
+        
+        if (session.isGeneralEdit) {
+            if (!confirm("¿Estás seguro que deseas cancelar la edición en cola? Los cambios guardados se mantendrán, pero los productos restantes saldrán de la cola.")) {
+                return;
+            }
+            localStorage.removeItem(STORAGE_KEY);
+            setSession(null);
+            setStep('input');
+            if (onImportSuccess) onImportSuccess();
+            return;
+        }
+
         if (!confirm("¿Estás seguro que deseas descartar esta carga? Los productos creados en esta sesión serán eliminados permanentemente y no se ingresarán al catálogo.")) {
             return;
         }

@@ -155,7 +155,8 @@ export const ProductList = ({ onSwitchToBulk }: { onSwitchToBulk?: () => void })
                 createdAt: new Date().toISOString(),
                 autoStart: true,
                 cost_percentage: pctStr || undefined,
-                savedProductIds: []
+                savedProductIds: [],
+                isGeneralEdit: true
             };
 
             localStorage.setItem('productosCola', JSON.stringify(sessionData));

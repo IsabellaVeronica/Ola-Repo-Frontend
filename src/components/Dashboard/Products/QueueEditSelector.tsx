@@ -110,7 +110,8 @@ export const QueueEditSelector = ({ onSwitchToBulk }: { onSwitchToBulk: () => vo
             createdAt: new Date().toISOString(),
             autoStart: true,
             cost_percentage: pctStr || undefined,
-            savedProductIds: []
+            savedProductIds: [],
+            isGeneralEdit: true
         };
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
