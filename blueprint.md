@@ -35,6 +35,9 @@ This project is a static-first web application built with Astro.js. It is design
 - **Solución de Error de Despliegue en Vercel**:
     *   Se eliminó la carpeta `.vercel` del historial de Git (`git rm -r --cached .vercel`) y se agregó a `.gitignore`.
 
+- **Corrección de Registro de Cargas Masivas**:
+    *   Se corrigió un error en el endpoint del backend `GET /api/inventario/cargas` en `inventario.routes.js` donde se consultaba la columna inexistente `id_auditoria` de la tabla `public.auditoria`. Se cambió al nombre de columna real `id` y se mapeó como `id_auditoria` para mantener la compatibilidad del frontend, permitiendo la carga exitosa del historial de cargas masivas anteriores.
+
 - **Exclusión de Consumibles y Precios Opcionales**:
     - Omitido el requerimiento de código de barras, usando SKU autogenerado por el sistema.
     - Precios y costo hechos opcionales, guardados como `NULL` en base de datos.
