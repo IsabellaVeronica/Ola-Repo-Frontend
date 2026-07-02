@@ -94,6 +94,11 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
     
     const [cargas, setCargas] = useState<any[]>([]);
 
+    // Cost surcharge state for historical loads
+    const [isCargaRecargoDialogOpen, setIsCargaRecargoDialogOpen] = useState(false);
+    const [cargaRecargoPercentage, setCargaRecargoPercentage] = useState<string>('');
+    const [selectedCargaForQueue, setSelectedCargaForQueue] = useState<any | null>(null);
+
     const fetchCargas = async () => {
         try {
             const data = await FetchData<any[]>(API_ENDPOINTS.INVENTORY.CARGAS, 'GET');
@@ -107,23 +112,45 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
         fetchCargas();
     }, [step]);
 
-    const handleEditCargaInQueue = async (carga: any) => {
+    const handleEditCargaInQueue = (carga: any) => {
         if (!carga.productos_activos || carga.productos_activos.length === 0) {
             alert("No hay productos activos en esta carga para editar.");
             return;
         }
 
+        setSelectedCargaForQueue(carga);
+        setCargaRecargoPercentage('');
+        setIsCargaRecargoDialogOpen(true);
+    };
+
+    const handleConfirmCargaQueue = async () => {
+        if (!selectedCargaForQueue) return;
+
+        const pctStr = cargaRecargoPercentage.trim();
+        if (pctStr !== "") {
+            const pct = parseFloat(pctStr);
+            if (isNaN(pct) || pct < 0) {
+                alert("Porcentaje inválido. Debe ser un número mayor o igual a 0.");
+                return;
+            }
+        }
+
         const sessionData: SessionData = {
-            sessionId: carga.session_id,
-            productosIds: carga.productos_activos,
+            sessionId: selectedCargaForQueue.session_id,
+            productosIds: selectedCargaForQueue.productos_activos,
             indiceActual: 0,
             productosCargados: [],
-            createdAt: carga.fecha
+            createdAt: selectedCargaForQueue.fecha,
+            cost_percentage: pctStr || undefined
         };
 
         setSession(sessionData);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(sessionData));
         
+        setIsCargaRecargoDialogOpen(false);
+        setSelectedCargaForQueue(null);
+        setCargaRecargoPercentage('');
+
         await loadProductForEditor(0);
         setStep('editor');
     };
@@ -1654,6 +1681,55 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
                         <Button onClick={handleQuickCreateBrand} disabled={loading || !newBrandName}>
                             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
                             Crear Marca
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isCargaRecargoDialogOpen} onOpenChange={setIsCargaRecargoDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-bold">Recargo de Envío / Costo (Opcional)</DialogTitle>
+                        <p className="text-xs text-muted-foreground">
+                            ¿Deseas agregar un porcentaje de recargo al costo de los productos de esta carga? Se aplicará de forma temporal en la vista de edición para que puedas revisarlo y modificarlo antes de guardar.
+                        </p>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="carga-percentage" className="text-right text-xs font-semibold">
+                                Porcentaje %
+                            </Label>
+                            <Input
+                                id="carga-percentage"
+                                type="number"
+                                placeholder="Ej: 10 para aumentar 10%"
+                                value={cargaRecargoPercentage}
+                                onChange={(e) => setCargaRecargoPercentage(e.target.value)}
+                                className="col-span-3 text-sm h-10"
+                                min="0"
+                                step="any"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && handleConfirmCargaQueue()}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={() => {
+                                setIsCargaRecargoDialogOpen(false);
+                                setSelectedCargaForQueue(null);
+                                setCargaRecargoPercentage('');
+                            }}
+                            className="text-xs font-semibold"
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleConfirmCargaQueue}
+                            className="bg-primary text-primary-foreground font-semibold text-xs h-10 px-4"
+                        >
+                            Iniciar Edición en Cola
                         </Button>
                     </DialogFooter>
                 </DialogContent>
