@@ -228,9 +228,25 @@ export const ProductList = ({ onSwitchToBulk }: { onSwitchToBulk?: () => void })
                             <TableRow>
                                 <TableHead className="w-[50px]">
                                     <Checkbox
-                                        checked={products.length > 0 && selectedIds.length === products.length}
+                                        checked={
+                                            products.filter(p => 
+                                                p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                (p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                (p.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                                            ).length > 0 && 
+                                            selectedIds.length === products.filter(p => 
+                                                p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                (p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                (p.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                                            ).length
+                                        }
                                         onCheckedChange={(checked) => {
-                                            setSelectedIds(checked ? products.map(p => p.id_producto) : []);
+                                            const filtered = products.filter(p => 
+                                                p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                (p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                (p.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                                            );
+                                            setSelectedIds(checked ? filtered.map(p => p.id_producto) : []);
                                         }}
                                     />
                                 </TableHead>
@@ -250,14 +266,22 @@ export const ProductList = ({ onSwitchToBulk }: { onSwitchToBulk?: () => void })
                                         Cargando productos...
                                     </TableCell>
                                 </TableRow>
-                            ) : products.length === 0 ? (
+                            ) : products.filter(p => 
+                                p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                (p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                (p.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                            ).length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                                         No se encontraron productos.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                products.map((product) => (
+                                products.filter(p => 
+                                    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    (p.category_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                    (p.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                                ).map((product) => (
                                     <TableRow key={product.id_producto}>
                                         <TableCell>
                                             <Checkbox
