@@ -38,6 +38,10 @@ interface VentaItem {
 interface Venta {
     id_venta: number;
     estado: 'completada' | 'anulada';
+    tipo_venta?: 'contado' | 'credito' | 'apartado';
+    total_pagado?: number;
+    estado_pago?: 'pagado' | 'parcial';
+    estado_entrega?: 'entregado' | 'pendiente';
     total: number;
     metodo_pago: string;
     referencia_pago?: string;
@@ -159,10 +163,179 @@ const AnularDialog = ({ venta, onClose, onSuccess }: {
     );
 };
 
+// ─────────────────────────────── Abonar Dialog ─────────────────────────────
+
+const AbonarDialog = ({ venta, onClose, onSuccess }: {
+    venta: Venta; onClose: () => void; onSuccess: () => void;
+}) => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [accounts, setAccounts] = useState<Account[]>([]);
+    
+    const [pagoMoneda, setPagoMoneda] = useState<string>('USD');
+    const [pagoCuentaId, setPagoCuentaId] = useState<number>(0);
+    const [pagoTasaCambio, setPagoTasaCambio] = useState<string>('1');
+    const [pagoMontoUsd, setPagoMontoUsd] = useState<string>('');
+    const [pagoReferencia, setPagoReferencia] = useState<string>('');
+
+    const pending = (venta.total || 0) - (venta.total_pagado || 0);
+
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            try {
+                const res = await fetch('/api/money/cuentas');
+                if (res.ok) {
+                    const data = await res.json();
+                    const activeList = (Array.isArray(data) ? data : data.data || []).filter((a: any) => a.activo && !a.eliminado);
+                    setAccounts(activeList);
+                    if (activeList.length > 0) {
+                        const usdAcc = activeList.find((a: any) => a.moneda === 'USD') || activeList[0];
+                        setPagoCuentaId(usdAcc.id_cuenta);
+                        setPagoMoneda(usdAcc.moneda);
+                    }
+                }
+            } catch (e) { console.error(e); }
+        };
+        fetchAccounts();
+    }, []);
+
+    const filteredAccounts = accounts.filter(a => a.moneda === pagoMoneda);
+
+    const handleMonedaChange = (moneda: string) => {
+        setPagoMoneda(moneda);
+        let defaultRate = '1';
+        if (moneda === 'VES') defaultRate = '36';
+        else if (moneda === 'COP') defaultRate = '4000';
+        setPagoTasaCambio(defaultRate);
+        const filtered = accounts.filter(a => a.moneda === moneda);
+        setPagoCuentaId(filtered.length > 0 ? filtered[0].id_cuenta : 0);
+    };
+
+    const calculatedMontoReal = () => {
+        const usd = parseFloat(pagoMontoUsd);
+        const rate = parseFloat(pagoTasaCambio);
+        if (isNaN(usd) || usd <= 0 || isNaN(rate) || rate <= 0) return 0;
+        return +(usd * rate).toFixed(2);
+    };
+
+    const handleAbonar = async () => {
+        const acc = accounts.find(a => a.id_cuenta === pagoCuentaId);
+        if (!acc) { setError('Selecciona una cuenta'); return; }
+        
+        const valUsd = parseFloat(pagoMontoUsd);
+        const rate = parseFloat(pagoTasaCambio);
+        if (isNaN(valUsd) || valUsd <= 0) { setError('Monto USD inválido'); return; }
+        if (isNaN(rate) || rate <= 0) { setError('Tasa inválida'); return; }
+
+        if (valUsd > pending + 0.01) { setError('El abono excede el saldo pendiente'); return; }
+
+        const valReal = +(valUsd * rate).toFixed(2);
+        setLoading(true); setError('');
+        
+        try {
+            const res = await fetch(`/api/ventas/${venta.id_venta}/abonos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pagos: [{
+                        id_cuenta: pagoCuentaId,
+                        moneda_pago: acc.moneda,
+                        tasa_cambio: rate,
+                        monto_real: valReal,
+                        monto_usd: valUsd,
+                        referencia_pago: pagoReferencia.trim() || undefined
+                    }]
+                }),
+            });
+            if (res.ok) { onSuccess(); }
+            else {
+                const data = await res.json().catch(() => ({}));
+                setError(data.message || data.error || `Error ${res.status}`);
+            }
+        } catch { setError('Error de conexión.'); }
+        finally { setLoading(false); }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="bg-background rounded-xl shadow-2xl w-full max-w-md border p-6 space-y-4">
+                <div className="flex items-center gap-3 text-primary">
+                    <Plus className="h-6 w-6" />
+                    <h3 className="text-lg font-bold">Registrar Abono</h3>
+                </div>
+                
+                <div className="p-3 bg-muted/40 rounded-md border text-sm text-center">
+                    <p className="text-muted-foreground uppercase text-[10px] font-bold">Saldo Pendiente</p>
+                    <p className="font-bold text-xl text-orange-500">${pending.toFixed(2)}</p>
+                </div>
+
+                <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">Moneda</label>
+                            <select className="w-full h-9 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={pagoMoneda} onChange={e => handleMonedaChange(e.target.value)}>
+                                <option value="USD">USD ($)</option>
+                                <option value="VES">VES (Bs)</option>
+                                <option value="COP">COP ($)</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">Monto Abono (USD)</label>
+                            <input className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                placeholder={`Ej: ${pending.toFixed(2)}`} value={pagoMontoUsd} onChange={e => setPagoMontoUsd(e.target.value)} />
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">Cuenta destino</label>
+                        <select className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            value={pagoCuentaId} onChange={e => setPagoCuentaId(parseInt(e.target.value, 10))}>
+                            <option value={0}>Selecciona una cuenta</option>
+                            {filteredAccounts.map(acc => (
+                                <option key={acc.id_cuenta} value={acc.id_cuenta}>{acc.nombre} ({acc.moneda})</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">Tasa de cambio</label>
+                            <input className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                placeholder="36.00" value={pagoTasaCambio} onChange={e => setPagoTasaCambio(e.target.value)} disabled={pagoMoneda === 'USD'} />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground">Referencia</label>
+                            <input className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                placeholder="Opcional" value={pagoReferencia} onChange={e => setPagoReferencia(e.target.value)} />
+                        </div>
+                    </div>
+                    
+                    <div className="p-2 bg-primary/10 rounded-md text-center text-primary text-sm font-bold border border-primary/20">
+                        Equivalente: {calculatedMontoReal().toLocaleString('es-CO', { minimumFractionDigits: 2 })} {pagoMoneda}
+                    </div>
+
+                    {error && <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{error}</p>}
+                </div>
+                
+                <div className="flex gap-3 justify-end pt-2 border-t">
+                    <button onClick={onClose} className="px-4 py-2 text-sm border rounded-md hover:bg-muted transition-colors">Cancelar</button>
+                    <button onClick={handleAbonar} disabled={loading || !pagoMontoUsd}
+                        className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50">
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                        Registrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
 // ─────────────────────────────── Detail Modal ─────────────────────────────
 
-const VentaDetailModal = ({ venta, onClose, onAnular, userRole }: {
-    venta: Venta; onClose: () => void; onAnular: () => void; userRole: string;
+const VentaDetailModal = ({ venta, onClose, onAnular, onAbonar, onEntregar, userRole }: {
+    venta: Venta; onClose: () => void; onAnular: () => void; onAbonar?: () => void; onEntregar?: () => void; userRole: string;
 }) => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
         <div className="bg-background rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border">
@@ -186,12 +359,39 @@ const VentaDetailModal = ({ venta, onClose, onAnular, userRole }: {
                     </div>
                     <div>
                         <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Pago</p>
-                        <PaymentBadge method={venta.metodo_pago} />
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <PaymentBadge method={venta.metodo_pago} />
+                            {venta.tipo_venta === 'credito' && <span className="inline-flex text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-medium">Crédito</span>}
+                            {venta.tipo_venta === 'apartado' && <span className="inline-flex text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-medium">Apartado</span>}
+                        </div>
                         {venta.referencia_pago && <p className="text-xs text-muted-foreground mt-1">Ref: {venta.referencia_pago}</p>}
                         {venta.id_pedido_origen && <p className="text-xs text-primary mt-1 font-medium">Desde Pedido #{venta.id_pedido_origen}</p>}
                         <p className="text-xs text-muted-foreground mt-1">
                             {venta.created_at ? format(new Date(venta.created_at), "d MMM yyyy, HH:mm", { locale: es }) : ''}
                         </p>
+                        
+                        {(venta.tipo_venta === 'credito' || venta.tipo_venta === 'apartado') && (
+                            <div className="mt-3 p-2 bg-muted/40 rounded-md border text-xs">
+                                <div className="flex justify-between mb-1">
+                                    <span className="text-muted-foreground">Total Pagado:</span>
+                                    <span className="font-bold text-green-600">${(venta.total_pagado || 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Pendiente:</span>
+                                    <span className={`font-bold ${venta.estado_pago === 'pagado' ? 'text-green-600' : 'text-orange-500'}`}>
+                                        ${((venta.total || 0) - (venta.total_pagado || 0)).toFixed(2)}
+                                    </span>
+                                </div>
+                                {venta.tipo_venta === 'apartado' && (
+                                    <div className="mt-2 pt-2 border-t flex justify-between">
+                                        <span className="text-muted-foreground">Entrega:</span>
+                                        <span className={`font-bold ${venta.estado_entrega === 'entregado' ? 'text-green-600' : 'text-orange-500'}`}>
+                                            {venta.estado_entrega === 'entregado' ? 'Entregado' : 'Pendiente (En tienda)'}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -237,12 +437,24 @@ const VentaDetailModal = ({ venta, onClose, onAnular, userRole }: {
                 </div>
             </div>
 
-            {(userRole === 'admin' || userRole === 'manager') && venta.estado === 'completada' && (
-                <div className="p-5 border-t bg-muted/10 flex justify-end">
-                    <button onClick={onAnular}
-                        className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 flex items-center gap-2">
-                        <Ban className="h-4 w-4" /> Anular Venta
-                    </button>
+            {(userRole === 'admin' || userRole === 'manager' || userRole === 'vendedor') && venta.estado === 'completada' && (
+                <div className="p-5 border-t bg-muted/10 flex justify-end gap-3 flex-wrap">
+                    {onAbonar && (venta.tipo_venta === 'credito' || venta.tipo_venta === 'apartado') && venta.estado_pago !== 'pagado' && (
+                        <button onClick={onAbonar} className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center gap-2">
+                            <Plus className="h-4 w-4" /> Añadir Abono
+                        </button>
+                    )}
+                    {onEntregar && venta.tipo_venta === 'apartado' && venta.estado_entrega !== 'entregado' && venta.estado_pago === 'pagado' && (
+                        <button onClick={onEntregar} className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2">
+                            <Package className="h-4 w-4" /> Entregar Producto
+                        </button>
+                    )}
+                    {(userRole === 'admin' || userRole === 'manager') && (
+                        <button onClick={onAnular}
+                            className="px-4 py-2 text-sm bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 flex items-center gap-2">
+                            <Ban className="h-4 w-4" /> Anular Venta
+                        </button>
+                    )}
                 </div>
             )}
         </div>
@@ -342,6 +554,8 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
     const [pagoTasaCambio, setPagoTasaCambio] = useState<string>('1');
     const [pagoMontoUsd, setPagoMontoUsd] = useState<string>('');
     const [pagoReferencia, setPagoReferencia] = useState<string>('');
+
+    const [tipoVenta, setTipoVenta] = useState<'contado' | 'credito' | 'apartado'>('contado');
 
     const normalizeCedula = (raw: string) =>
         String(raw || '').toUpperCase().replace(/[^0-9A-Z]/g, '');
@@ -554,7 +768,8 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
 
     const handleSubmit = async () => {
         if (cart.length === 0) { setSubmitError('Agrega al menos un producto al carrito.'); return; }
-        if (Math.abs(pending) > 0.01) { setSubmitError('El monto total pagado debe ser exactamente igual al total de la venta.'); return; }
+        if (tipoVenta === 'contado' && Math.abs(pending) > 0.01) { setSubmitError('Para ventas de contado, el monto pagado debe ser igual al total.'); return; }
+        if (tipoVenta !== 'contado' && pending < -0.01) { setSubmitError('El abono no puede ser mayor al total de la venta.'); return; }
         setSubmitLoading(true); setSubmitError('');
         try {
             const res = await fetch('/api/ventas', {
@@ -577,7 +792,8 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                         monto_real: p.monto_real,
                         monto_usd: p.monto_usd,
                         referencia_pago: p.referencia_pago
-                    }))
+                    })),
+                    tipo_venta: tipoVenta
                 }),
             });
             const data = await res.json().catch(() => ({}));
@@ -782,6 +998,18 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                                 />
                             </div>
                             <div className="space-y-0.5">
+                                <label className="text-[10px] font-medium text-muted-foreground">Tipo de Venta</label>
+                                <select
+                                    className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring font-medium text-primary"
+                                    value={tipoVenta}
+                                    onChange={e => setTipoVenta(e.target.value as any)}
+                                >
+                                    <option value="contado">Al Contado</option>
+                                    <option value="credito">A Crédito (Lleva el producto)</option>
+                                    <option value="apartado">Apartado (Producto en tienda)</option>
+                                </select>
+                            </div>
+                            <div className="space-y-0.5">
                                 <label className="text-[10px] font-medium text-muted-foreground">Email</label>
                                 <input
                                     className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
@@ -842,7 +1070,9 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                                     <p className="font-bold text-foreground">${total.toFixed(2)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[9px] text-muted-foreground uppercase font-bold">Pagado</p>
+                                    <p className="text-[9px] text-muted-foreground uppercase font-bold">
+                                        {tipoVenta === 'contado' ? 'Pagado' : 'Abonado'}
+                                    </p>
                                     <p className="font-bold text-green-600 dark:text-green-400">${totalPaid.toFixed(2)}</p>
                                 </div>
                                 <div>
@@ -855,9 +1085,11 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                         </div>
 
                         {/* Add Payment Form */}
-                        {Math.abs(pending) > 0.01 && (
+                        {(pending > 0.01 || tipoVenta !== 'contado') && (
                             <div className="space-y-2.5 p-3 bg-muted/20 rounded-lg border">
-                                <label className="text-[9px] font-bold text-muted-foreground uppercase">Agregar Pago Parcial</label>
+                                <label className="text-[9px] font-bold text-muted-foreground uppercase">
+                                    {tipoVenta === 'contado' ? 'Agregar Pago Parcial' : (pagos.length === 0 ? 'Abono Inicial (Opcional)' : 'Agregar Abono')}
+                                </label>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div className="space-y-0.5">
                                         <label className="text-[9px] font-medium text-muted-foreground">Moneda de pago</label>
@@ -940,11 +1172,11 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
 
                         <button
                             onClick={handleSubmit}
-                            disabled={submitLoading || cart.length === 0 || Math.abs(pending) > 0.01}
+                            disabled={submitLoading || cart.length === 0 || (tipoVenta === 'contado' && Math.abs(pending) > 0.01) || (tipoVenta !== 'contado' && pending < -0.01)}
                             className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-bold text-sm hover:bg-primary/90 flex items-center justify-center gap-2 disabled:opacity-50 transition-colors shadow-md shadow-primary/20"
                         >
                             {submitLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Confirmar Venta · ${total.toFixed(2)}
+                            {tipoVenta === 'contado' ? 'Confirmar Venta' : (tipoVenta === 'credito' ? 'Registrar Crédito' : 'Crear Apartado')} · ${total.toFixed(2)}
                         </button>
                     </div>
                 </div>
@@ -973,6 +1205,9 @@ const VentasManagerContent: React.FC = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
+    
+    // Action states
+    const [ventaToAbonar, setVentaToAbonar] = useState<Venta | null>(null);
 
     useEffect(() => {
         const meta = document.querySelector<HTMLMetaElement>('meta[name="user-role"]');
@@ -987,16 +1222,22 @@ const VentasManagerContent: React.FC = () => {
             if (statusFilter) params.append('estado', statusFilter);
             if (dateFrom) params.append('from', dateFrom);
             if (dateTo) params.append('to', dateTo);
+            
+            // Tab filtering for tipo_venta
+            if (activeTab === 'creditos') params.append('tipo_venta', 'credito');
+            else if (activeTab === 'apartados') params.append('tipo_venta', 'apartado');
+            else if (activeTab === 'list') params.append('tipo_venta', 'contado');
+
             const res = await fetch(`/api/ventas?${params}`);
             if (!res.ok) { setErrorMsg('Error al cargar ventas'); return; }
             const data = await res.json();
             setVentas(Array.isArray(data) ? data : (data.data || []));
         } catch (e: any) { setErrorMsg(e.message); }
         finally { setLoading(false); }
-    }, [page, search, statusFilter, dateFrom, dateTo]);
+    }, [page, search, statusFilter, dateFrom, dateTo, activeTab]);
 
     useEffect(() => {
-        if (activeTab === 'list') {
+        if (activeTab === 'list' || activeTab === 'creditos' || activeTab === 'apartados') {
             const t = setTimeout(fetchVentas, 300);
             return () => clearTimeout(t);
         }
@@ -1017,6 +1258,28 @@ const VentasManagerContent: React.FC = () => {
         setActiveTab('list');
         setSuccessMsg('¡Venta registrada exitosamente! El stock fue actualizado.');
         fetchVentas(); setTimeout(() => setSuccessMsg(''), 5000);
+    };
+
+    const handleAbonarSuccess = () => {
+        setVentaToAbonar(null);
+        if (selectedVenta) fetchDetail(selectedVenta.id_venta);
+        setSuccessMsg('Abono registrado exitosamente.');
+        fetchVentas(); setTimeout(() => setSuccessMsg(''), 5000);
+    };
+
+    const handleEntregar = async (idVenta: number) => {
+        if (!confirm('¿Estás seguro de marcar este apartado como entregado?')) return;
+        try {
+            const res = await fetch(`/api/ventas/${idVenta}/entregar`, { method: 'POST' });
+            if (res.ok) {
+                setSuccessMsg('Producto entregado exitosamente.');
+                if (selectedVenta) fetchDetail(selectedVenta.id_venta);
+                fetchVentas(); setTimeout(() => setSuccessMsg(''), 5000);
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Error al entregar producto');
+            }
+        } catch { alert('Error de red'); }
     };
 
     return (
@@ -1040,10 +1303,16 @@ const VentasManagerContent: React.FC = () => {
                 <div className="overflow-x-auto w-full pb-2">
                     <TabsList className="bg-card/60 backdrop-blur-md border border-foreground/10 p-1 shadow-sm w-fit sm:w-full justify-start whitespace-nowrap">
                         <TabsTrigger value="new" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
-                            <Plus className="h-4 w-4" /> Registrar Venta
+                            <Plus className="h-4 w-4" /> Registrar
                         </TabsTrigger>
-                        <TabsTrigger value="list" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
-                            <ClipboardList className="h-4 w-4" /> Ventas Registradas
+                        <TabsTrigger value="list" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <ClipboardList className="h-4 w-4" /> Ventas (Contado)
+                        </TabsTrigger>
+                        <TabsTrigger value="creditos" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <ClipboardList className="h-4 w-4" /> Créditos
+                        </TabsTrigger>
+                        <TabsTrigger value="apartados" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                            <Package className="h-4 w-4" /> Apartados
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -1052,7 +1321,8 @@ const VentasManagerContent: React.FC = () => {
                     <RegistrarVentaView onSuccess={handleSaleSuccess} onCancel={() => setActiveTab('list')} />
                 </TabsContent>
 
-                <TabsContent value="list" className="mt-6 space-y-6">
+                {(activeTab === 'list' || activeTab === 'creditos' || activeTab === 'apartados') && (
+                    <div className="mt-6 space-y-6">
                     {/* Filters */}
                     <div className="rounded-lg border bg-card shadow-sm p-4 space-y-3">
                         <div className="flex flex-col sm:flex-row gap-3">
@@ -1163,13 +1433,23 @@ const VentasManagerContent: React.FC = () => {
 
                     {/* Modals */}
                     {selectedVenta && (
-                        <VentaDetailModal venta={selectedVenta} onClose={() => setSelectedVenta(null)}
-                            onAnular={() => setVentaToAnular(selectedVenta)} userRole={userRole} />
+                        <VentaDetailModal 
+                            venta={selectedVenta} 
+                            onClose={() => setSelectedVenta(null)}
+                            onAnular={() => setVentaToAnular(selectedVenta)} 
+                            onAbonar={() => setVentaToAbonar(selectedVenta)}
+                            onEntregar={() => handleEntregar(selectedVenta.id_venta)}
+                            userRole={userRole} 
+                        />
                     )}
                     {ventaToAnular && (
                         <AnularDialog venta={ventaToAnular} onClose={() => setVentaToAnular(null)} onSuccess={handleAnularSuccess} />
                     )}
-                </TabsContent>
+                    {ventaToAbonar && (
+                        <AbonarDialog venta={ventaToAbonar} onClose={() => setVentaToAbonar(null)} onSuccess={handleAbonarSuccess} />
+                    )}
+                </div>
+                )}
             </Tabs>
         </div>
     );
