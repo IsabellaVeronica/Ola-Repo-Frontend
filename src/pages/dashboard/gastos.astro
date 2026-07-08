@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Header from "../../components/Dashboard/Header.astro";
 import Sidebar from "../../components/Dashboard/Sidebar.astro";
 import GastosManager from "../../components/Dashboard/Gastos/GastosManager";
-import AuthGuard from "../../components/Dashboard/AuthGuard";
+import { AuthGuard } from "../../components/Dashboard/AuthGuard";
 
 const token = Astro.cookies.get("token")?.value;
 if (!token) {
