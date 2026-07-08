@@ -1210,6 +1210,16 @@ const VentasManagerContent: React.FC = () => {
     const [ventaToAbonar, setVentaToAbonar] = useState<Venta | null>(null);
 
     useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            try {
+                const user = JSON.parse(storedUser);
+                const rawRoles = user.roles ?? user.role;
+                const role = Array.isArray(rawRoles) ? rawRoles[0] : rawRoles;
+                setUserRole(role || '');
+                return;
+            } catch (e) {}
+        }
         const meta = document.querySelector<HTMLMetaElement>('meta[name="user-role"]');
         if (meta) setUserRole(meta.content);
     }, []);
