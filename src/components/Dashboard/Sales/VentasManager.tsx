@@ -437,7 +437,7 @@ const VentaDetailModal = ({ venta, onClose, onAnular, onAbonar, onEntregar, user
                 </div>
             </div>
 
-            {(userRole === 'admin' || userRole === 'manager' || userRole === 'vendedor') && venta.estado === 'completada' && (
+            {(userRole === 'admin' || userRole === 'manager' || userRole === 'vendedor') && venta.estado === 'concretada' && (
                 <div className="p-5 border-t bg-muted/10 flex justify-end gap-3 flex-wrap">
                     {onAbonar && (venta.tipo_venta === 'credito' || venta.tipo_venta === 'apartado') && venta.estado_pago !== 'pagado' && (
                         <button onClick={onAbonar} className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 flex items-center gap-2">
