@@ -301,7 +301,8 @@ export default function GastosManager() {
       {activeTab === 'categorias' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categorias.map(c => {
-            const Icon = ICONS[(c.metadata?.icon as keyof typeof ICONS) || 'tags'];
+            const iconKey = (c.metadata?.icon as keyof typeof ICONS) || 'tags';
+            const Icon = ICONS[iconKey] || Tags;
             return (
               <div key={c.id_expense_category} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative group overflow-hidden">
                 <div className="flex justify-between items-start mb-4">
