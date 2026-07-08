@@ -539,6 +539,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
     const [clienteEmail, setClienteEmail] = useState('');
     const [clienteTelefono, setClienteTelefono] = useState('');
     const [observacion, setObservacion] = useState('');
+    const [fechaVenta, setFechaVenta] = useState('');
 
     const [submitLoading, setSubmitLoading] = useState(false);
     const [submitError, setSubmitError] = useState('');
@@ -793,13 +794,15 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                         monto_usd: p.monto_usd,
                         referencia_pago: p.referencia_pago
                     })),
-                    tipo_venta: tipoVenta
+                    tipo_venta: tipoVenta,
+                    fecha: fechaVenta ? new Date(fechaVenta).toISOString() : undefined
                 }),
             });
             const data = await res.json().catch(() => ({}));
             if (res.ok) {
                 setCart([]);
                 setPagos([]);
+                setFechaVenta('');
                 onSuccess();
             } else if (res.status === 409) {
                 setSubmitError(`⚠️ ${data.message || 'Stock insuficiente o venta ya registrada.'}`);
@@ -1008,6 +1011,15 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
                                     <option value="credito">A Crédito (Lleva el producto)</option>
                                     <option value="apartado">Apartado (Producto en tienda)</option>
                                 </select>
+                            </div>
+                            <div className="space-y-0.5">
+                                <label className="text-[10px] font-medium text-muted-foreground">Fecha (Opcional - Ventas pasadas)</label>
+                                <input
+                                    type="datetime-local"
+                                    className="w-full h-8 rounded-md border border-input bg-background px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                    value={fechaVenta}
+                                    onChange={e => setFechaVenta(e.target.value)}
+                                />
                             </div>
                             <div className="space-y-0.5">
                                 <label className="text-[10px] font-medium text-muted-foreground">Email</label>
