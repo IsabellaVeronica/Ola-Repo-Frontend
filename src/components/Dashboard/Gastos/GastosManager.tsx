@@ -57,19 +57,25 @@ export default function GastosManager() {
     setLoading(true);
     try {
       const [catRes, gastosRes, kpisRes] = await Promise.all([
-        fetch('/api/gastos/categorias'),
-        fetch('/api/gastos?limit=50'),
-        fetch('/api/gastos/kpis')
+        fetch('/api/gastos/categorias').catch(() => null),
+        fetch('/api/gastos?limit=50').catch(() => null),
+        fetch('/api/gastos/kpis').catch(() => null)
       ]);
-      if (catRes.ok) setCategorias(await catRes.json());
-      if (gastosRes.ok) setGastos((await gastosRes.json()).data);
-      if (kpisRes.ok) {
-        const kData = await kpisRes.json();
-        setKpis(kData.kpis);
-        setDistribution(kData.distribution);
+      if (catRes?.ok) {
+        const catData = await catRes.json().catch(() => []);
+        setCategorias(Array.isArray(catData) ? catData : []);
+      }
+      if (gastosRes?.ok) {
+        const gData = await gastosRes.json().catch(() => ({ data: [] }));
+        setGastos(Array.isArray(gData?.data) ? gData.data : []);
+      }
+      if (kpisRes?.ok) {
+        const kData = await kpisRes.json().catch(() => ({ kpis: { total_gastos: 0, max_gasto: 0 }, distribution: [] }));
+        setKpis(kData?.kpis || { total_gastos: 0, max_gasto: 0 });
+        setDistribution(Array.isArray(kData?.distribution) ? kData.distribution : []);
       }
     } catch (err) {
-      console.error(err);
+      console.error('fetchData error:', err);
     } finally {
       setLoading(false);
     }
