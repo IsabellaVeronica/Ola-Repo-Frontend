@@ -22,7 +22,18 @@ const COLORS = [
   'bg-blue-500', 'bg-indigo-500', 'bg-purple-500', 'bg-pink-500', 'bg-slate-500'
 ];
 
-export default function GastosManager({ userRole }: { userRole: string }) {
+export default function GastosManager() {
+  const [userRole, setUserRole] = useState('');
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    if (user) {
+      try {
+        const parsed = JSON.parse(user);
+        const role = parsed.roles?.[0] || parsed.role;
+        setUserRole(role || '');
+      } catch (e) {}
+    }
+  }, []);
   const [activeTab, setActiveTab] = useState<'historial' | 'categorias'>('historial');
   const [categorias, setCategorias] = useState<any[]>([]);
   const [gastos, setGastos] = useState<any[]>([]);
