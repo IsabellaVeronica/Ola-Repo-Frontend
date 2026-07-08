@@ -435,8 +435,40 @@ const VentaDetailModal = ({ venta, onClose, onAnular, onAbonar, onEntregar, user
                         </table>
                     </div>
                 </div>
-            </div>
 
+                {venta.pagos && venta.pagos.length > 0 && (
+                    <div className="pt-2 border-t">
+                        <p className="text-xs font-bold uppercase text-muted-foreground mb-2">Historial de Pagos</p>
+                        <div className="rounded-md border overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-muted/50 text-xs">
+                                    <tr>
+                                        <th className="p-2.5 text-left font-medium">Fecha</th>
+                                        <th className="p-2.5 text-left font-medium">Cuenta</th>
+                                        <th className="p-2.5 text-right font-medium">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y">
+                                    {venta.pagos.map((p: any) => (
+                                        <tr key={p.id_transaccion} className="hover:bg-muted/10">
+                                            <td className="p-2.5 text-xs text-muted-foreground">
+                                                {p.created_at ? format(new Date(p.created_at), "d MMM yyyy, HH:mm", { locale: es }) : '—'}
+                                            </td>
+                                            <td className="p-2.5">
+                                                {p.cuenta_nombre} <span className="text-xs text-muted-foreground">({p.moneda_pago})</span>
+                                            </td>
+                                            <td className="p-2.5 text-right font-medium text-green-600">
+                                                +${Number(p.monto_usd).toFixed(2)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+            </div>
             {(userRole === 'admin' || userRole === 'manager' || userRole === 'vendedor') && venta.estado === 'concretada' && (
                 <div className="p-5 border-t bg-muted/10 flex justify-end gap-3 flex-wrap">
                     {onAbonar && (venta.tipo_venta === 'credito' || venta.tipo_venta === 'apartado') && venta.estado_pago !== 'pagado' && (
@@ -769,6 +801,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
 
     const handleSubmit = async () => {
         if (cart.length === 0) { setSubmitError('Agrega al menos un producto al carrito.'); return; }
+        if (Number(pagoMontoUsd) > 0) { setSubmitError('Tienes un monto escrito pero no le has dado al botón "Agregar Pago". Por favor agrégalo antes de registrar la venta.'); return; }
         if (tipoVenta === 'contado' && Math.abs(pending) > 0.01) { setSubmitError('Para ventas de contado, el monto pagado debe ser igual al total.'); return; }
         if (tipoVenta !== 'contado' && pending < -0.01) { setSubmitError('El abono no puede ser mayor al total de la venta.'); return; }
         setSubmitLoading(true); setSubmitError('');
