@@ -40,6 +40,7 @@ async function proxy(request: Request, path: string) {
 }
 
 export const ALL: APIRoute = ({ request, params }) => {
-    console.log(`[Money Proxy] ${request.method} ${params.path}`);
-    return proxy(request, `/money/${params.path}`);
+    console.log(`[Money Proxy] ${request.method} ${params.path || ''}`);
+    const suffix = params.path ? `/${params.path}` : '';
+    return proxy(request, `/money${suffix}`);
 };

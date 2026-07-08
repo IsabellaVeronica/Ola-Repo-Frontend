@@ -12,7 +12,8 @@ export const ALL: APIRoute = async ({ params, request }) => {
     }
 
     try {
-        const targetUrl = `${externalApiBase}/public/${path}${searchParams}`;
+        const suffix = path ? `/${path}` : '';
+        const targetUrl = `${externalApiBase}/public${suffix}${searchParams}`;
 
         // Read body for POST/PUT if needed
         const body = request.method !== 'GET' ? await request.text() : undefined;

@@ -15,7 +15,8 @@ export const ALL: APIRoute = async ({ params, request }) => {
   const token = request.headers.get('cookie')?.split('; ').find(row => row.startsWith('token='))?.split('=')[1];
 
   try {
-    const targetUrl = `${externalApiBase}/catalog/${path}${searchParams}`;
+    const suffix = path ? `/${path}` : '';
+    const targetUrl = `${externalApiBase}/catalog${suffix}${searchParams}`;
 
     // Read body for POST/PUT
     const body = request.method !== 'GET' ? await request.text() : undefined;
