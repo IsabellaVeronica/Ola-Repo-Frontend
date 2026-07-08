@@ -53,17 +53,26 @@ export const TopPerfumes: React.FC = () => {
           // Fallback if no sales yet: bring 3 newest from normal catalog
           const fallbackRes = await FetchData<any>(`${API_ENDPOINTS.CATALOG.PRODUCTS}?limit=3`, 'GET');
           const fallbackData = fallbackRes.data || [];
-          const fillers: Product[] = fallbackData.map((p: any) => ({
-            id: String(p.id_producto),
-            name: p.nombre,
-            price: Number(p.min_price) || Number(p.precio) || 0,
-            image: p.imagen_principal || 'https://placehold.co/400x400/261633/FFF5F7?text=Perfume',
+          const apiBase = import.meta.env.PUBLIC_EXTERNAL_API_BASE?.replace('/api', '') || '';
+          
+          const fillers: Product[] = fallbackData.map((p: any) => {
+            let imgUrl = p.imagen_principal || p.imagen || p.image || '';
+            if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('blob:')) {
+              imgUrl = `${apiBase}/${imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl}`;
+            }
+
+            return {
+              id: String(p.id_producto),
+              name: p.nombre,
+              price: Number(p.min_price) || Number(p.precio) || 0,
+              image: imgUrl || 'https://placehold.co/400x400/261633/FFF5F7?text=Perfume',
             description: p.descripcion || '',
             category: p.categoria || '',
             brand: p.marca || '',
             categoryId: String(p.id_categoria),
             brandId: String(p.id_marca)
-          }));
+            };
+          });
           setProducts(fillers);
         }
       } catch (error) {

@@ -37,7 +37,8 @@ interface VentaItem {
 
 interface Venta {
     id_venta: number;
-    estado: 'completada' | 'anulada';
+    estado: 'completada' | 'anulada' | 'concretada';
+    pagos?: any[];
     tipo_venta?: 'contado' | 'credito' | 'apartado';
     total_pagado?: number;
     estado_pago?: 'pagado' | 'parcial';

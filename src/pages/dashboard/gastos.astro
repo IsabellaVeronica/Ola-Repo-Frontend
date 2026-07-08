@@ -1,0 +1,19 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import GastosManager from '../../components/Dashboard/Gastos/GastosManager';
+import AuthGuard from '../../components/Dashboard/AuthGuard';
+
+const externalApiBase = import.meta.env.PUBLIC_EXTERNAL_API_BASE;
+---
+
+<MainLayout title="Gestión de Gastos | Panel Administrativo">
+    <AuthGuard client:load>
+        {
+            (user: any) => (
+                <div class="p-6">
+                    <GastosManager client:load userRole={user.rol} />
+                </div>
+            )
+        }
+    </AuthGuard>
+</MainLayout>
