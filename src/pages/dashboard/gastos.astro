@@ -1,19 +1,30 @@
 ---
-import MainLayout from '../../layouts/MainLayout.astro';
-import GastosManager from '../../components/Dashboard/Gastos/GastosManager';
-import AuthGuard from '../../components/Dashboard/AuthGuard';
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Dashboard/Header.astro";
+import Sidebar from "../../components/Dashboard/Sidebar.astro";
+import GastosManager from "../../components/Dashboard/Gastos/GastosManager";
+import AuthGuard from "../../components/Dashboard/AuthGuard";
 
-const externalApiBase = import.meta.env.PUBLIC_EXTERNAL_API_BASE;
+const token = Astro.cookies.get("token")?.value;
+if (!token) {
+  return Astro.redirect("/login");
+}
 ---
 
-<MainLayout title="Gestión de Gastos | Panel Administrativo">
-    <AuthGuard client:load>
-        {
+<Layout title="Gestión de Gastos | Panel Administrativo">
+  <div class="flex flex-col min-h-screen bg-background">
+    <Header />
+    <div class="flex flex-1">
+      <Sidebar />
+      <main class="flex-1 min-w-0 p-4 md:p-8 overflow-x-hidden">
+        <AuthGuard client:load>
+          {
             (user: any) => (
-                <div class="p-6">
-                    <GastosManager client:load userRole={user.rol} />
-                </div>
+              <GastosManager client:load userRole={user.rol} />
             )
-        }
-    </AuthGuard>
-</MainLayout>
+          }
+        </AuthGuard>
+      </main>
+    </div>
+  </div>
+</Layout>
