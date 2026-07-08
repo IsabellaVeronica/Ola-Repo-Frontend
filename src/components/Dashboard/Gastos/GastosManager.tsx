@@ -77,7 +77,7 @@ export default function GastosManager() {
 
   const fetchCuentas = async () => {
     try {
-      const res = await fetch('/api/money');
+      const res = await fetch('/api/money/cuentas');
       if (res.ok) setCuentas(await res.json());
     } catch (err) {
       console.error(err);
