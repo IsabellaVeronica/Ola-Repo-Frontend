@@ -29,7 +29,7 @@ export const TopPerfumes: React.FC = () => {
 
         if (rawProducts.length > 0) {
           const mappedProducts: Product[] = rawProducts.slice(0, 3).map((p: any) => {
-            let imgUrl = p.imagen_principal || p.imagen || p.image || '';
+            let imgUrl = p.imagen_url || p.imagen_principal || p.imagen || p.image || '';
             
             // If the URL is relative, prefix it with the backend base
             if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('blob:')) {
@@ -56,7 +56,7 @@ export const TopPerfumes: React.FC = () => {
           const apiBase = import.meta.env.PUBLIC_EXTERNAL_API_BASE?.replace('/api', '') || '';
           
           const fillers: Product[] = fallbackData.map((p: any) => {
-            let imgUrl = p.imagen_principal || p.imagen || p.image || '';
+            let imgUrl = p.imagen_url || p.imagen_principal || p.imagen || p.image || '';
             if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('blob:')) {
               imgUrl = `${apiBase}/${imgUrl.startsWith('/') ? imgUrl.slice(1) : imgUrl}`;
             }
