@@ -107,9 +107,9 @@ export const TopPerfumes: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto px-4">
+      <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 md:gap-12 max-w-5xl mx-auto px-4 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {products.map((product, index) => (
-          <div key={product.id} className="relative group">
+          <div key={product.id} className="relative group flex-none w-[85vw] sm:w-[320px] md:w-auto md:flex-1 snap-center">
             {/* Top Badge */}
             <div className="absolute -top-4 -left-4 w-10 h-10 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center font-bold text-lg z-10 shadow-md">
               #{index + 1}
