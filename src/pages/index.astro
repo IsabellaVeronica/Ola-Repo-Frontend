@@ -6,6 +6,7 @@ import { TopPerfumes } from "@/components/Shop/TopPerfumes";
 import { CartWidget } from "@/components/Shop/CartWidget";
 import { CartDrawer } from "@/components/Shop/CartDrawer";
 import ImageCollage from "@/components/Shop/ImageCollage.astro";
+import { BackToTop } from "@/components/Shop/BackToTop";
 
 const externalApiBase = import.meta.env.PUBLIC_EXTERNAL_API_BASE;
 let settings: any = {};
@@ -166,5 +167,6 @@ if (iconPath) {
       </div>
     </footer>
 
+    <BackToTop client:load />
   </main>
 </Layout>
