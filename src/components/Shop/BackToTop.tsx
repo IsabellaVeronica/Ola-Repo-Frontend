@@ -6,7 +6,7 @@ export const BackToTop: React.FC = () => {
 
   // Show button when page is scrolled down
   const toggleVisibility = () => {
-    if (window.scrollY > 300) {
+    if (window.scrollY > 150) {
       setIsVisible(true);
     } else {
       setIsVisible(false);
@@ -21,7 +21,7 @@ export const BackToTop: React.FC = () => {
   };
 
   useEffect(() => {
-    window.addEventListener('scroll', toggleVisibility);
+    window.addEventListener('scroll', toggleVisibility, { passive: true });
     return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
 
@@ -29,7 +29,7 @@ export const BackToTop: React.FC = () => {
     <button
       type="button"
       onClick={scrollToTop}
-      className={`fixed bottom-6 right-6 p-3 rounded-full bg-secondary text-secondary-foreground shadow-xl transition-all duration-300 hover:bg-secondary/90 hover:scale-110 z-50 ${
+      className={`fixed bottom-6 right-6 p-3 rounded-full bg-secondary text-secondary-foreground shadow-xl transition-all duration-300 hover:bg-secondary/90 hover:scale-110 z-[999] ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'
       }`}
       aria-label="Volver al inicio"

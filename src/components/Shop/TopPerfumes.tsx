@@ -106,10 +106,15 @@ export const TopPerfumes: React.FC = () => {
           El Top 3 de nuestras fragancias <span className="font-bold italic">más vendidas</span>.
         </p>
       </div>
+      
+      {/* Swipe Hint (Mobile only) */}
+      <div className="md:hidden flex items-center justify-center gap-2 mb-4 text-xs font-semibold text-secondary animate-pulse uppercase tracking-widest">
+        <span>&larr; Desliza para ver más &rarr;</span>
+      </div>
 
-      <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 md:gap-12 max-w-5xl mx-auto px-4 pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex overflow-x-auto snap-x snap-mandatory gap-6 md:gap-12 max-w-5xl mx-auto px-6 py-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {products.map((product, index) => (
-          <div key={product.id} className="relative group flex-none w-[85vw] sm:w-[320px] md:w-auto md:flex-1 snap-center">
+          <div key={product.id} className="relative group flex-none w-[70vw] sm:w-[280px] md:w-auto md:flex-1 snap-center mt-4">
             {/* Top Badge */}
             <div className="absolute -top-4 -left-4 w-10 h-10 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center font-bold text-lg z-10 shadow-md">
               #{index + 1}
