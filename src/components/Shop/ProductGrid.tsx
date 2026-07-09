@@ -163,10 +163,64 @@ export const ProductGrid: React.FC = () => {
   }, [enrichedProducts, selectedCategory, selectedBrand, priceRange]);
 
 
+  const bentoStyles = [
+    "col-span-2 row-span-2 bg-secondary text-secondary-foreground text-3xl md:text-5xl rounded-3xl", 
+    "col-span-1 row-span-1 bg-[#FDF1EE] text-secondary text-lg md:text-2xl rounded-3xl", 
+    "col-span-1 row-span-2 bg-foreground text-background text-2xl md:text-4xl rounded-3xl", 
+    "col-span-1 row-span-1 bg-secondary/10 text-foreground border-2 border-secondary/20 text-lg md:text-2xl rounded-3xl",
+    "col-span-2 md:col-span-1 row-span-1 bg-[#261633] text-white text-xl md:text-3xl rounded-3xl",
+    "col-span-2 row-span-1 bg-gray-100 text-gray-800 text-xl md:text-3xl rounded-3xl",
+    "col-span-1 row-span-1 bg-[#d7e6e3] text-[#1c3833] text-lg md:text-2xl rounded-3xl",
+  ];
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-12" id="productos-grid">
+
+      {/* --- BENTO GRID --- */}
+      {categories.length > 1 && (
+        <div className="mb-16">
+          <div className="flex flex-col items-center mb-8">
+             <span className="text-[10px] tracking-[0.3em] font-bold text-muted-foreground uppercase mb-2">Explorar</span>
+             <h4 className="font-display italic text-3xl text-foreground font-light text-center">Nuestras Categorías</h4>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:auto-rows-[180px] gap-4 md:gap-6">
+            {categories.slice(1).map((cat, i) => {
+              const style = bentoStyles[i % bentoStyles.length];
+              const isSelected = selectedCategory.id === cat.id;
+              
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    if (isSelected) {
+                      setSelectedCategory(categories[0]); // Reset to Todos
+                    } else {
+                      setSelectedCategory(cat);
+                      setTimeout(() => {
+                        document.getElementById('filtros-busqueda')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }
+                  }}
+                  className={`group relative p-6 md:p-8 flex flex-col justify-end items-start text-left overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 active:scale-[0.98] ${style} ${isSelected ? 'ring-4 ring-offset-4 ring-secondary shadow-xl' : 'shadow-sm'}`}
+                >
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500"></div>
+                  <span className="relative z-10 font-display italic font-medium leading-tight">
+                    {cat.name}
+                  </span>
+                  
+                  {/* Decorative circle for some blocks */}
+                  {i % 3 === 0 && (
+                    <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full bg-white/10 blur-2xl group-hover:bg-white/20 transition-all duration-700"></div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Filters Container */}
-      <div className="flex flex-col gap-6 max-w-6xl mx-auto bg-card/50 p-6 rounded-xl border border-border">
+      <div id="filtros-busqueda" className="flex flex-col gap-6 max-w-6xl mx-auto bg-card/50 p-6 rounded-2xl border border-border shadow-sm">
 
         {/* Row 1: Search Bar (Main) */}
         <div className="relative w-full">
