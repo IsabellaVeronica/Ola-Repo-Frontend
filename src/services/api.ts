@@ -48,6 +48,8 @@ export const API_ENDPOINTS = {
     CUENTAS: `/api/money/cuentas`,
     CUENTA: (id: string | number) => `/api/money/cuentas/${id}`,
     MOVIMIENTOS: `/api/money/movimientos`,
-    RESUMEN: `/api/money/resumen`
+    MOVIMIENTO: (id: string | number) => `/api/money/movimientos/${id}`,
+    RESUMEN: `/api/money/resumen`,
+    TRANSFER: `/api/money/transferir`,
   }
 }

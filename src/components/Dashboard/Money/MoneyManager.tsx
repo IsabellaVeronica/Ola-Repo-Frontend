@@ -41,6 +41,7 @@ export const MoneyManager: React.FC = () => {
   // Modales
   const [showCreateAccountModal, setShowCreateAccountModal] = useState(false);
   const [showCreateMovementModal, setShowCreateMovementModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Formulario Nueva Cuenta
@@ -57,6 +58,16 @@ export const MoneyManager: React.FC = () => {
     monto_usd: '',
     tasa_cambio: '1.00',
     concepto: ''
+  });
+
+  // Formulario Transferencia
+  const [transferData, setTransferData] = useState({
+    id_cuenta_origen: '',
+    id_cuenta_destino: '',
+    monto_origen: '',
+    tasa_cambio_origen: '1.00',
+    tasa_cambio_destino: '1.00',
+    concepto: 'Transferencia / Cambio'
   });
 
   // Cargar datos
@@ -219,6 +230,53 @@ export const MoneyManager: React.FC = () => {
     }
   };
 
+  const handleTransferSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setIsSubmitting(true);
+    try {
+      const { id_cuenta_origen, id_cuenta_destino, monto_origen, tasa_cambio_origen, tasa_cambio_destino, concepto } = transferData;
+      
+      const valOrigen = parseFloat(monto_origen);
+      const rateOrigen = parseFloat(tasa_cambio_origen);
+      
+      if (isNaN(valOrigen) || isNaN(rateOrigen) || valOrigen <= 0 || rateOrigen <= 0) {
+        throw new Error("Monto y tasa origen deben ser mayores a cero.");
+      }
+
+      const monto_usd = valOrigen / rateOrigen;
+
+      const response = await fetch(API_ENDPOINTS.MONEY.TRANSFER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_cuenta_origen: parseInt(id_cuenta_origen, 10),
+          id_cuenta_destino: parseInt(id_cuenta_destino, 10),
+          monto_usd,
+          tasa_cambio_origen: rateOrigen,
+          tasa_cambio_destino: parseFloat(tasa_cambio_destino || '1'),
+          concepto: concepto.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Error al realizar transferencia');
+      }
+
+      setSuccess('Transferencia realizada exitosamente!');
+      setShowTransferModal(false);
+      setTransferData(prev => ({ ...prev, monto_origen: '' }));
+      await fetchAllData();
+      await fetchTransactions();
+    } catch (err: any) {
+      setError(err.message || 'Error al procesar transferencia');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Desactivar/Eliminar Cuenta
   const handleDeleteAccountClick = (cuenta: any) => {
     setError(null);
@@ -300,6 +358,21 @@ export const MoneyManager: React.FC = () => {
             onClick={handleOpenCreateMovement}
           >
             <PlusCircle className="h-4 w-4" /> Registrar Ajuste
+          </Button>
+          <Button 
+            className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl gap-2 shadow-lg shadow-blue-600/20 active:scale-95 transition-all text-xs h-11"
+            onClick={() => {
+              if (cuentas.length >= 2) {
+                setTransferData(prev => ({ 
+                  ...prev, 
+                  id_cuenta_origen: String(cuentas[0].id_cuenta),
+                  id_cuenta_destino: String(cuentas[1].id_cuenta)
+                }));
+              }
+              setShowTransferModal(true);
+            }}
+          >
+            <RefreshCw className="h-4 w-4" /> Transferir / Cambiar
           </Button>
         </div>
       </div>
@@ -770,6 +843,140 @@ export const MoneyManager: React.FC = () => {
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Registrar Movimiento'}
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
+      {/* Modal Transferencia */}
+      {showTransferModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-md shadow-2xl border-border bg-card">
+            <CardHeader className="border-b border-border bg-muted/20 pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-blue-500" /> Realizar Transferencia
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowTransferModal(false)} className="h-8 w-8 rounded-full border border-transparent hover:border-border">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <form onSubmit={handleTransferSubmit}>
+              <CardContent className="space-y-4 pt-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground">Cuenta Origen *</label>
+                    <select 
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-primary font-medium"
+                      value={transferData.id_cuenta_origen}
+                      onChange={(e) => {
+                        const newAcc = cuentas.find(c => String(c.id_cuenta) === e.target.value);
+                        setTransferData(prev => ({ 
+                          ...prev, 
+                          id_cuenta_origen: e.target.value,
+                          tasa_cambio_origen: newAcc?.moneda === 'USD' ? '1.00' : prev.tasa_cambio_origen
+                        }));
+                      }}
+                      required
+                    >
+                      <option value="" disabled>Seleccionar</option>
+                      {cuentas.map(c => <option key={c.id_cuenta} value={c.id_cuenta}>{c.nombre} ({c.moneda})</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground">Cuenta Destino *</label>
+                    <select 
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-primary font-medium"
+                      value={transferData.id_cuenta_destino}
+                      onChange={(e) => {
+                        const newAcc = cuentas.find(c => String(c.id_cuenta) === e.target.value);
+                        setTransferData(prev => ({ 
+                          ...prev, 
+                          id_cuenta_destino: e.target.value,
+                          tasa_cambio_destino: newAcc?.moneda === 'USD' ? '1.00' : prev.tasa_cambio_destino
+                        }));
+                      }}
+                      required
+                    >
+                      <option value="" disabled>Seleccionar</option>
+                      {cuentas.filter(c => String(c.id_cuenta) !== transferData.id_cuenta_origen).map(c => (
+                        <option key={c.id_cuenta} value={c.id_cuenta}>{c.nombre} ({c.moneda})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-muted-foreground">Monto a Enviar (en moneda origen) *</label>
+                  <Input 
+                    type="number" step="any"
+                    className="h-10 text-sm font-medium bg-background border-border" placeholder="Ej: 100.00"
+                    value={transferData.monto_origen}
+                    onChange={(e) => setTransferData({ ...transferData, monto_origen: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground">Tasa Origen</label>
+                    <Input 
+                      type="number" step="any" className="h-10 text-sm font-medium bg-background border-border" 
+                      value={transferData.tasa_cambio_origen}
+                      onChange={(e) => setTransferData({ ...transferData, tasa_cambio_origen: e.target.value })}
+                      disabled={cuentas.find(c => String(c.id_cuenta) === transferData.id_cuenta_origen)?.moneda === 'USD'}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground">Tasa Destino</label>
+                    <Input 
+                      type="number" step="any" className="h-10 text-sm font-medium bg-background border-border" 
+                      value={transferData.tasa_cambio_destino}
+                      onChange={(e) => setTransferData({ ...transferData, tasa_cambio_destino: e.target.value })}
+                      disabled={cuentas.find(c => String(c.id_cuenta) === transferData.id_cuenta_destino)?.moneda === 'USD'}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {(() => {
+                  const oAcc = cuentas.find(c => String(c.id_cuenta) === transferData.id_cuenta_origen);
+                  const dAcc = cuentas.find(c => String(c.id_cuenta) === transferData.id_cuenta_destino);
+                  const valO = parseFloat(transferData.monto_origen || '0');
+                  const rateO = parseFloat(transferData.tasa_cambio_origen || '1');
+                  const rateD = parseFloat(transferData.tasa_cambio_destino || '1');
+                  if (oAcc && dAcc && valO > 0 && rateO > 0 && rateD > 0) {
+                    const valUsd = valO / rateO;
+                    const valD = valUsd * rateD;
+                    return (
+                      <div className="p-2.5 bg-blue-500/10 rounded-lg border border-blue-500/20 text-xs font-bold text-blue-600 animate-in fade-in duration-200">
+                        <span className="block text-muted-foreground font-normal mb-1">Resumen de operación:</span>
+                        Se debitarán {getCurrencySymbol(oAcc.moneda)}{valO.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} de {oAcc.nombre}
+                        <br/>
+                        Se acreditarán {getCurrencySymbol(dAcc.moneda)}{valD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} en {dAcc.nombre}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-muted-foreground">Concepto / Motivo</label>
+                  <Input 
+                    className="h-10 text-sm font-medium bg-background border-border" placeholder="Ej: Cambio de divisas" 
+                    value={transferData.concepto}
+                    onChange={(e) => setTransferData({ ...transferData, concepto: e.target.value })}
+                  />
+                </div>
+              </CardContent>
+              <div className="p-4 border-t border-border flex gap-2 justify-end bg-muted/20">
+                <Button type="button" variant="outline" onClick={() => setShowTransferModal(false)}>Cancelar</Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-semibold" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirmar Transferencia'}
                 </Button>
               </div>
             </form>
