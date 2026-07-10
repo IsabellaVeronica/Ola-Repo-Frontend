@@ -48,8 +48,10 @@ interface Venta {
     referencia_pago?: string;
     observacion?: string;
     motivo_anulacion?: string;
-    created_at: string;
+    created_at?: string;
+    id_usuario?: number;
     cliente_cedula?: string;
+    cedula_cliente?: string;
     cliente_nombre?: string;
     cliente_email?: string;
     cliente_telefono?: string;
@@ -354,7 +356,7 @@ const VentaDetailModal = ({ venta, onClose, onAnular, onAbonar, onEntregar, user
                     <div>
                         <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Cliente</p>
                         <p className="font-semibold">{venta.cliente_nombre || 'Sin nombre'}</p>
-                        {venta.cliente_cedula && <p className="text-xs text-muted-foreground">C.I. {venta.cliente_cedula}</p>}
+                        {(venta.cliente_cedula || venta.cedula_cliente) && <p className="text-xs text-muted-foreground">C.I. {venta.cliente_cedula || venta.cedula_cliente}</p>}
                         {venta.cliente_email && <p className="text-xs text-muted-foreground">{venta.cliente_email}</p>}
                         {venta.cliente_telefono && <p className="text-xs text-muted-foreground">{venta.cliente_telefono}</p>}
                     </div>
