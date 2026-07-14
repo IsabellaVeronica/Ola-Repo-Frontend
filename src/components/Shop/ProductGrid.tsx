@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ProductCard } from './ProductCard';
 import { ProductDetailDialog } from './ProductDetailDialog';
-import { Search } from 'lucide-react';
+import { Search, SlidersHorizontal, Store } from 'lucide-react';
 import type { Product } from './CartConfig';
 import { API_ENDPOINTS } from '@/services/api';
 import { FetchData } from '@/services/fetch';
 import { useSettings } from '@/hooks/useSettings';
-import { Store } from 'lucide-react';
 
 export const ProductGrid: React.FC = () => {
   const { settings, loading: settingsLoading } = useSettings();
@@ -20,6 +20,7 @@ export const ProductGrid: React.FC = () => {
   const [selectedProductId, setSelectedProductId] = useState<number | undefined>(undefined);
 
   // Filter States
+  const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState({ id: 'all', name: 'Todos' });
   const [selectedBrand, setSelectedBrand] = useState({ id: 'all', name: 'Todas' });
@@ -169,21 +170,32 @@ export const ProductGrid: React.FC = () => {
       <div className="flex flex-col gap-6 max-w-6xl mx-auto bg-card/50 p-6 rounded-xl border border-border">
 
         {/* Row 1: Search Bar (Main) */}
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-          <Input
-            type="text"
-            placeholder="Buscar productos, categorías..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-12 bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-accent w-full text-lg"
-          />
+        <div className="flex gap-3 w-full">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+            <Input
+              type="text"
+              placeholder="Buscar productos, categorías..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-12 bg-background border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-accent w-full text-lg"
+            />
+          </div>
+          <Button 
+            variant={showFilters ? "default" : "outline"}
+            onClick={() => setShowFilters(!showFilters)}
+            className="h-12 px-4 gap-2 border-input bg-background"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+            <span className="hidden sm:inline">Filtros</span>
+          </Button>
         </div>
 
         {/* Row 2: Multi-Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          {/* Category Select */}
+        {showFilters && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            
+            {/* Category Select */}
           <div className="flex flex-col gap-1.5">
             <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Categoría</label>
             <select
@@ -248,17 +260,17 @@ export const ProductGrid: React.FC = () => {
               className="w-full bg-background border border-input text-foreground rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
             >
               <option value="default">Seleccionar...</option>
-              <option value="price-asc">Precio: Menor a Mayor</option>
-              <option value="price-desc">Precio: Mayor a Menor</option>
-              <option value="name-asc">Nombre: A-Z</option>
-              <option value="name-desc">Nombre: Z-A</option>
+              <option value="price_asc">Precio: Menor a Mayor</option>
+              <option value="price_desc">Precio: Mayor a Menor</option>
+              <option value="name_asc">Nombre: A-Z</option>
+              <option value="name_desc">Nombre: Z-A</option>
             </select>
           </div>
-
         </div>
+        )}
       </div>
 
-      {/* Grid */}
+      {/* Grid of Products */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-8">
         {loading || settingsLoading ? (
           <div className="col-span-full text-center py-20 text-muted-foreground animate-pulse font-medium">Buscando productos...</div>
