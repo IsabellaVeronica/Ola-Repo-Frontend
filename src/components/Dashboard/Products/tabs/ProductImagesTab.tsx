@@ -66,7 +66,7 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
         setUploading(true);
         const file = e.target.files[0];
         const formData = new FormData();
-        formData.append('image', file);
+        formData.append('images', file);
 
         // Associate with variant if selected
         if (uploadVariantId && uploadVariantId !== "generic") {
