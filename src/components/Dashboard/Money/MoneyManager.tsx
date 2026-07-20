@@ -55,7 +55,7 @@ export const MoneyManager: React.FC = () => {
   const [newMovementData, setNewMovementData] = useState({
     id_cuenta: '',
     tipo: 'ingreso',
-    monto_usd: '',
+    monto_local: '',
     tasa_cambio: '1.00',
     concepto: ''
   });
@@ -188,20 +188,22 @@ export const MoneyManager: React.FC = () => {
   // Crear Movimiento Manual
   const handleCreateMovement = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { id_cuenta, tipo, monto_usd, tasa_cambio, concepto } = newMovementData;
-    if (!id_cuenta || !monto_usd || !concepto.trim()) return;
+    const { id_cuenta, tipo, monto_local, tasa_cambio, concepto } = newMovementData;
+    if (!id_cuenta || !monto_local || !concepto.trim()) return;
 
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
     try {
+      const monto_usd = parseFloat(monto_local) / parseFloat(tasa_cambio || '1');
+
       const response = await fetch(API_ENDPOINTS.MONEY.MOVIMIENTOS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id_cuenta: parseInt(id_cuenta, 10),
           tipo,
-          monto_usd: parseFloat(monto_usd),
+          monto_usd,
           tasa_cambio: parseFloat(tasa_cambio || '1'),
           concepto: concepto.trim()
         })
@@ -217,7 +219,7 @@ export const MoneyManager: React.FC = () => {
       setNewMovementData({
         id_cuenta: cuentas[0] ? String(cuentas[0].id_cuenta) : '',
         tipo: 'ingreso',
-        monto_usd: '',
+        monto_local: '',
         tasa_cambio: '1.00',
         concepto: ''
       });
@@ -778,18 +780,24 @@ export const MoneyManager: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-muted-foreground">Monto en USD ($) *</label>
-                    <Input 
-                      type="number"
-                      step="any"
-                      className="h-10 bg-background border-border text-foreground text-sm focus-visible:ring-primary font-medium" 
-                      placeholder="0.00"
-                      value={newMovementData.monto_usd}
-                      onChange={(e) => setNewMovementData({ ...newMovementData, monto_usd: e.target.value })}
-                      required
-                    />
-                  </div>
+                  {(() => {
+                    const activeAcc = cuentas.find(c => String(c.id_cuenta) === newMovementData.id_cuenta);
+                    const currency = activeAcc ? activeAcc.moneda : 'USD';
+                    return (
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-muted-foreground">Monto en {currency} *</label>
+                        <Input 
+                          type="number"
+                          step="any"
+                          className="h-10 bg-background border-border text-foreground text-sm focus-visible:ring-primary font-medium" 
+                          placeholder="0.00"
+                          value={newMovementData.monto_local}
+                          onChange={(e) => setNewMovementData({ ...newMovementData, monto_local: e.target.value })}
+                          required
+                        />
+                      </div>
+                    )
+                  })()}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground">Tasa de Cambio *</label>
                     <Input 
@@ -807,10 +815,10 @@ export const MoneyManager: React.FC = () => {
                 {(() => {
                   const activeAcc = cuentas.find(c => String(c.id_cuenta) === newMovementData.id_cuenta);
                   if (activeAcc && activeAcc.moneda !== 'USD') {
-                    const calculated = parseFloat(newMovementData.monto_usd || '0') * parseFloat(newMovementData.tasa_cambio || '1');
+                    const calculated = parseFloat(newMovementData.monto_local || '0') / parseFloat(newMovementData.tasa_cambio || '1');
                     return (
                       <div className="p-2.5 bg-primary/5 rounded-lg border border-primary/10 text-xs font-bold text-primary animate-in fade-in duration-200">
-                        Se registrarán {getCurrencySymbol(activeAcc.moneda)}{calculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} en {activeAcc.nombre}.
+                        Equivale a ${calculated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD.
                       </div>
                     );
                   }
