@@ -851,16 +851,6 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
 
     return (
         <div className="flex flex-col h-full gap-6">
-            {/* Title */}
-            <div className="flex items-center gap-3">
-                <button onClick={onCancel} className="p-2 rounded-lg hover:bg-muted transition-colors border border-border shrink-0">
-                    <ArrowLeft className="h-4 w-4" />
-                </button>
-                <div className="min-w-0">
-                    <h2 className="text-lg sm:text-2xl font-bold text-primary truncate">Registrar Venta</h2>
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Selecciona variantes del catálogo.</p>
-                </div>
-            </div>
 
             <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
                 {/* ── LEFT: Catalog ── */}
@@ -1358,18 +1348,18 @@ const VentasManagerContent: React.FC = () => {
             )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="overflow-x-auto w-full pb-2">
-                    <TabsList className="bg-card/60 backdrop-blur-md border border-foreground/10 p-1 shadow-sm w-fit sm:w-full justify-start whitespace-nowrap">
-                        <TabsTrigger value="new" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                <div className="w-full pb-2">
+                    <TabsList className="bg-card/60 backdrop-blur-md border border-foreground/10 p-1 shadow-sm w-full h-auto flex flex-wrap justify-start gap-1">
+                        <TabsTrigger value="new" className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold grow sm:grow-0">
                             <Plus className="h-4 w-4" /> Registrar
                         </TabsTrigger>
-                        <TabsTrigger value="list" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                        <TabsTrigger value="list" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold grow sm:grow-0">
                             <ClipboardList className="h-4 w-4" /> Ventas (Contado)
                         </TabsTrigger>
-                        <TabsTrigger value="creditos" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                        <TabsTrigger value="creditos" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold grow sm:grow-0">
                             <ClipboardList className="h-4 w-4" /> Créditos
                         </TabsTrigger>
-                        <TabsTrigger value="apartados" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold">
+                        <TabsTrigger value="apartados" onClick={() => setPage(1)} className="flex items-center gap-2 text-foreground/60 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-semibold grow sm:grow-0">
                             <Package className="h-4 w-4" /> Apartados
                         </TabsTrigger>
                     </TabsList>
