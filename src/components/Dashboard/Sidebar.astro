@@ -1,4 +1,5 @@
 ---
+import { Home, Users, Package, ShoppingCart, Activity, Receipt, Wallet, FileText, Shield, Settings } from 'lucide-react';
 const { pathname } = Astro.url;
 const isActive = (path: string) => {
     // Exact match or match with trailing slash
@@ -21,52 +22,62 @@ const isActive = (path: string) => {
     <nav>
         <ul class="space-y-1">
             <li>
-                <a href="/dashboard" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Home className="w-5 h-5 text-blue-500" />
                     Principal
                 </a>
             </li>
             <li>
-                <a href="/dashboard/users" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/users') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/users" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/users') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Users className="w-5 h-5 text-violet-500" />
                     Usuarios
                 </a>
             </li>
             <li>
-                <a href="/dashboard/products" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/products') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/products" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/products') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Package className="w-5 h-5 text-orange-500" />
                     Inventario
                 </a>
             </li>
             <li>
-                <a href="/dashboard/orders" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/orders') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/orders" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/orders') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <ShoppingCart className="w-5 h-5 text-pink-500" />
                     Pedidos
                 </a>
             </li>
             <li>
-                <a href="/dashboard/ventas" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/ventas') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/ventas" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/ventas') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Activity className="w-5 h-5 text-emerald-500" />
                     Ventas
                 </a>
             </li>
             <li>
-                <a href="/dashboard/gastos" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/gastos') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/gastos" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/gastos') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Receipt className="w-5 h-5 text-rose-500" />
                     Gastos
                 </a>
             </li>
             <li>
-                <a href="/dashboard/dinero" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/dinero') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/dinero" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/dinero') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Wallet className="w-5 h-5 text-amber-500" />
                     Dinero
                 </a>
             </li>
             <li>
-                <a href="/dashboard/reports" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/reports') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/reports" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/reports') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <FileText className="w-5 h-5 text-indigo-500" />
                     Reportes
                 </a>
             </li>
             <li>
-                <a href="/dashboard/audit" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/audit') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/audit" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/audit') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Shield className="w-5 h-5 text-red-600" />
                     Auditoría
                 </a>
             </li>
             <li>
-                <a href="/dashboard/settings" class={`flex items-center gap-2 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/settings') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                <a href="/dashboard/settings" class={`flex items-center gap-3 px-4 py-2.5 rounded-md transition-colors ${isActive('/dashboard/settings') ? 'bg-primary text-primary-foreground font-bold shadow-sm' : 'text-foreground hover:bg-secondary/50'}`}>
+                    <Settings className="w-5 h-5 text-slate-500" />
                     Configuración
                 </a>
             </li>
