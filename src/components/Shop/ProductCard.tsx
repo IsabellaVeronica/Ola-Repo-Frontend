@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { MessageCircle } from 'lucide-react';
 import type { Product } from './CartConfig';
 
 interface ProductCardProps {
@@ -106,6 +107,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
         {/* Minimalist price for mobile devices (since hover is tricky on touch) */}
         <div className="md:hidden mt-3 text-sm font-bold text-secondary tracking-widest bg-secondary/5 inline-block px-3 py-1 rounded-full">
           {currency}{formattedPrice}
+        </div>
+
+        {/* WhatsApp Button */}
+        <div className="mt-5 flex justify-center pb-2">
+          <a
+            href={`https://wa.me/${settings?.contacto?.whatsapp || ''}?text=${encodeURIComponent('Hola, me interesa el perfume ' + product.name)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-secondary/20 hover:border-secondary/50 hover:bg-secondary/5 transition-all duration-300 group/wa"
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-secondary group-hover/wa:scale-110 transition-transform duration-300" />
+            <span className="text-[9px] font-bold tracking-[0.2em] uppercase text-muted-foreground group-hover/wa:text-foreground transition-colors">
+              Pedir por WhatsApp
+            </span>
+          </a>
         </div>
       </div>
     </div>
