@@ -230,9 +230,10 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                                                     <div
                                                         key={variant.id_variante_producto || index}
                                                         className={`
-                                                        p-3 border rounded-lg flex justify-between items-center transition-all bg-card
-                                                        ${qty > 0 ? 'border-primary ring-1 ring-primary bg-primary/5' : 'hover:border-gray-300'}
-                                                        ${outOfStock ? 'opacity-60 bg-gray-50' : ''}
+                                                        p-3 border border-border/50 rounded-xl flex justify-between items-center transition-all shadow-sm
+                                                        bg-background/40 backdrop-blur-md
+                                                        ${qty > 0 ? 'border-primary/50 ring-1 ring-primary/50 bg-primary/10' : 'hover:border-primary/30 hover:bg-background/60'}
+                                                        ${outOfStock ? 'opacity-60 bg-muted/20' : ''}
                                                     `}
                                                     >
                                                         <div className="flex flex-col min-w-0 flex-1 mr-4">
@@ -253,11 +254,11 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                                                         </div>
 
                                                         {/* Individual Quantity Selector */}
-                                                        <div className="flex items-center border rounded-md bg-background shadow-sm h-8">
+                                                        <div className="flex items-center border border-border/50 rounded-lg bg-background/50 backdrop-blur-sm shadow-sm h-8 overflow-hidden">
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-full w-8 rounded-r-none hover:bg-gray-100"
+                                                                className="h-full w-8 rounded-none hover:bg-muted/50"
                                                                 onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(index, -1, stock); }}
                                                                 disabled={qty <= 0}
                                                             >
@@ -267,7 +268,7 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                className="h-full w-8 rounded-l-none hover:bg-gray-100"
+                                                                className="h-full w-8 rounded-none hover:bg-muted/50"
                                                                 onClick={(e) => { e.stopPropagation(); handleUpdateQuantity(index, 1, stock); }}
                                                                 disabled={outOfStock || qty >= stock}
                                                             >
@@ -312,8 +313,8 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                             </div>
 
                             {/* Actions Footer */}
-                            <div className="pt-4 border-t flex flex-col gap-4 mt-auto">
-                                <div className="flex justify-between items-center bg-secondary/20 p-4 rounded-lg">
+                            <div className="pt-4 border-t border-border/50 flex flex-col gap-4 mt-auto">
+                                <div className="flex justify-between items-center bg-primary/10 dark:bg-primary/5 border border-primary/20 backdrop-blur-md shadow-sm p-4 rounded-xl">
                                     <div className="flex flex-col">
                                         <span className="text-sm font-medium text-muted-foreground">Total a pagar:</span>
                                         <span className="text-xs text-muted-foreground">{getTotalItems()} productos seleccionados</span>
