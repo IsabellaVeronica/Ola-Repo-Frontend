@@ -1449,7 +1449,16 @@ const VentasManagerContent: React.FC = () => {
                                                 {v.created_at ? format(new Date(v.created_at), "d MMM yyyy, HH:mm", { locale: es }) : '—'}
                                             </td>
                                             <td className="p-4"><PaymentBadge method={v.metodo_pago} /></td>
-                                            <td className="p-4"><StatusBadge status={v.estado} /></td>
+                                            <td className="p-4">
+                                                <div className="flex flex-col gap-1.5 items-start">
+                                                    <StatusBadge status={v.estado} />
+                                                    {(v.tipo_venta === 'credito' || v.tipo_venta === 'apartado') && (
+                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold border tracking-wide uppercase ${v.estado_pago === 'pagado' ? 'bg-green-100 text-green-700 border-green-200' : (v.estado_pago === 'parcial' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-orange-100 text-orange-700 border-orange-200')}`}>
+                                                            {v.estado_pago === 'pagado' ? 'Totalmente Pagado' : (v.estado_pago === 'parcial' ? 'Abono Parcial' : 'Pago Pendiente')}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="p-4 text-right font-semibold">
                                                 ${(Number(v.total) || 0).toLocaleString('es-CO', { minimumFractionDigits: 2 })}
                                             </td>
