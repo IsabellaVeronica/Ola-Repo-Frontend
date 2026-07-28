@@ -178,7 +178,7 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-full">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-full bg-background/80 backdrop-blur-xl border-white/20 shadow-2xl rounded-2xl">
                 {loading ? (
                     <div className="py-20 text-center">Cargando detalles...</div>
                 ) : !product ? (
@@ -187,7 +187,7 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Left: Images */}
                         <div className="space-y-4">
-                            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border">
+                            <div className="aspect-square bg-background/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20 shadow-inner">
                                 <img src={mainImage} alt={product.nombre} className="w-full h-full object-contain" />
                             </div>
                             <div className="flex gap-2 overflow-x-auto pb-2">
