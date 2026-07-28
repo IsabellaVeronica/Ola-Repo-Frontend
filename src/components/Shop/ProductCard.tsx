@@ -33,7 +33,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
 
   return (
     <div
-      className="group cursor-pointer"
+      className="group cursor-pointer flex flex-col h-full"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => onSelect(product)}
@@ -101,7 +101,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
       </div>
 
       {/* Text Block */}
-      <div className="text-center px-2">
+      <div className="text-center px-2 flex flex-col flex-1">
         {/* Animated terracotta underline  */}
         <div className="flex items-center justify-center gap-2 mb-3">
           <span
@@ -130,7 +130,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
         </div>
 
         {/* WhatsApp Button */}
-        <div className="mt-5 flex justify-center pb-2">
+        <div className="mt-auto flex justify-center pb-2 pt-4">
           <a
             href={`https://wa.me/${settings?.contacto?.whatsapp || ''}?text=${encodeURIComponent('Hola, me interesa el perfume ' + product.name)}`}
             target="_blank"
