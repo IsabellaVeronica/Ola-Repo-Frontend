@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle } from 'lucide-react';
 import type { Product } from './CartConfig';
 
@@ -10,6 +10,18 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, settings }) => {
   const [hovered, setHovered] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Compile unique images
+  const allImages = Array.from(new Set([product.image, ...(product.images || [])])).filter(Boolean);
+
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+    }, 3500); // Change image every 3.5 seconds
+    return () => clearInterval(interval);
+  }, [allImages.length]);
 
   const currency = settings?.catalogo?.simbolo_moneda || '$';
   const showDecimals = settings?.catalogo?.mostrar_decimales !== false;
@@ -38,13 +50,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
         {/* Background neutral layer */}
         <div className="absolute inset-0 bg-foreground/[0.04] z-0" />
 
-        {/* Product Image */}
-        <img
-          src={product.image}
-          alt={product.name}
-          className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6 z-10 transition-all duration-700 ease-out drop-shadow-xl mix-blend-darken dark:mix-blend-normal"
-          style={{ transform: hovered ? 'scale(1.08) translateY(-6px)' : 'scale(1) translateY(0)' }}
-        />
+        {/* Product Images (Slideshow) */}
+        {allImages.map((img, idx) => (
+          <img
+            key={idx}
+            src={img}
+            alt={`${product.name} ${idx + 1}`}
+            className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6 z-10 transition-all duration-1000 ease-in-out drop-shadow-xl mix-blend-darken dark:mix-blend-normal"
+            style={{ 
+              opacity: currentImageIndex === idx ? 1 : 0,
+              transform: currentImageIndex === idx 
+                ? (hovered ? 'scale(1.08) translateY(-6px)' : 'scale(1) translateY(0)') 
+                : 'scale(0.95)'
+            }}
+          />
+        ))}
 
         {/* Brand badge top-left */}
         <div

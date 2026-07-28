@@ -120,6 +120,7 @@ export const ProductGrid: React.FC = () => {
           name: p.nombre,
           price: Number(p.min_price) || Number(p.precio) || 0,
           image: p.imagen_principal || 'https://placehold.co/400x400/261633/FFF5F7?text=Producto', // Placeholder
+          images: p.imagenes || [],
           description: p.descripcion || '',
           category: p.categoria || '',
           brand: p.marca || '',
