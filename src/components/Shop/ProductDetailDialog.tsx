@@ -187,7 +187,7 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Left: Images */}
                         <div className="space-y-4">
-                            <div className="aspect-square bg-background/40 backdrop-blur-sm rounded-xl overflow-hidden border border-white/20 shadow-inner">
+                            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border">
                                 <img src={mainImage} alt={product.nombre} className="w-full h-full object-contain" />
                             </div>
                             <div className="flex gap-2 overflow-x-auto pb-2">
