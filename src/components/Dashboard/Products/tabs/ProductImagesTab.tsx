@@ -65,29 +65,53 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
         if (!e.target.files || e.target.files.length === 0) return;
         setUploading(true);
         const file = e.target.files[0];
-        const formData = new FormData();
-        formData.append('images', file);
-
-        // Associate with variant if selected
-        if (uploadVariantId && uploadVariantId !== "generic") {
-            formData.append('id_variante_producto', uploadVariantId);
-        }
 
         try {
-            await FetchData(
-                API_ENDPOINTS.PRODUCTS.IMAGES(product.id_producto),
-                'POST',
-                { body: formData }
+            // Step 1: Get a signed upload signature from backend (tiny request, no file)
+            const sigRes = await fetch(`/api/products/${product.id_producto}/images/signature`, {
+                method: 'POST',
+            });
+            if (!sigRes.ok) throw new Error('No se pudo obtener la firma de subida');
+            const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+
+            // Step 2: Upload DIRECTLY to Cloudinary from the browser (bypasses Vercel limit)
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('signature', signature);
+            formData.append('timestamp', timestamp);
+            formData.append('folder', folder);
+            formData.append('public_id', public_id);
+            formData.append('api_key', api_key);
+
+            const cloudinaryRes = await fetch(
+                `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+                { method: 'POST', body: formData }
             );
+            if (!cloudinaryRes.ok) throw new Error('Error al subir la imagen a Cloudinary');
+            const cloudinaryData = await cloudinaryRes.json();
+
+            // Step 3: Register the Cloudinary URL in the backend DB (tiny JSON request)
+            const registerBody: any = { url: cloudinaryData.secure_url };
+            if (uploadVariantId && uploadVariantId !== "generic") {
+                registerBody.id_variante_producto = uploadVariantId;
+            }
+            const registerRes = await fetch(`/api/products/${product.id_producto}/images/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(registerBody),
+            });
+            if (!registerRes.ok) throw new Error('Error al registrar la imagen en el sistema');
+
             fetchRes();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error uploading image", error);
-            alert("Error al subir imagen");
+            alert(`Error al subir imagen: ${error.message}`);
         } finally {
             setUploading(false);
             e.target.value = '';
         }
     };
+
 
     const confirmDelete = async () => {
         if (!imageToDelete) return;
