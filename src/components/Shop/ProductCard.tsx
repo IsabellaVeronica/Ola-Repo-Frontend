@@ -56,7 +56,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
             key={idx}
             src={img}
             alt={`${product.name} ${idx + 1}`}
-            className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6 z-10 transition-all duration-1000 ease-in-out drop-shadow-xl mix-blend-darken dark:mix-blend-normal"
+            className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6 z-10 transition-all duration-1000 ease-in-out mix-blend-multiply dark:mix-blend-normal"
             style={{ 
               opacity: currentImageIndex === idx ? 1 : 0,
               transform: currentImageIndex === idx 

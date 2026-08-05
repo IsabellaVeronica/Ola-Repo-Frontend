@@ -261,7 +261,7 @@ export const CartDrawer: React.FC = () => {
                             return (
                                 <div key={key} className="flex gap-4 bg-secondary/20 p-3 rounded-lg border border-transparent hover:border-border transition-colors group">
                                     <div className="relative">
-                                        <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-md shadow-sm" />
+                                        <img src={item.image} alt={item.name} className="w-20 h-20 object-cover mix-blend-multiply rounded-md shadow-sm" />
                                         <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                                             x{item.quantity}
                                         </span>

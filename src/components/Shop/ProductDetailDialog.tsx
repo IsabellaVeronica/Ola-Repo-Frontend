@@ -188,7 +188,7 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                         {/* Left: Images */}
                         <div className="space-y-4">
                             <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border">
-                                <img src={mainImage} alt={product.nombre} className="w-full h-full object-contain" />
+                                <img src={mainImage} alt={product.nombre} className="w-full h-full object-contain mix-blend-multiply" />
                             </div>
                             <div className="flex gap-2 overflow-x-auto pb-2">
                                 {images.map((img, idx) => (
@@ -197,7 +197,7 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                                         onClick={() => setMainImage(img)}
                                         className={`w-20 h-20 border rounded-md overflow-hidden flex-shrink-0 ${mainImage === img ? 'ring-2 ring-primary' : ''}`}
                                     >
-                                        <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
+                                        <img src={img} alt="Thumbnail" className="w-full h-full object-cover mix-blend-multiply" />
                                     </button>
                                 ))}
                             </div>
