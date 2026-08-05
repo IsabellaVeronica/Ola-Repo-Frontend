@@ -440,12 +440,36 @@ export const BulkCreateProducts = ({ onImportSuccess }: { onImportSuccess?: () =
             });
 
             if (selectedImages.length > 0) {
-                const formData = new FormData();
-                selectedImages.forEach(file => formData.append('images', file));
-                
-                await FetchData(API_ENDPOINTS.INVENTORY.BULK_IMAGES(id), 'POST', {
-                    body: formData
-                });
+                for (const file of selectedImages) {
+                    // 1. Obtener firma
+                    const sigRes = await fetch(`/api/products/${id}/images/signature`, { method: 'POST' });
+                    if (!sigRes.ok) throw new Error('No se pudo obtener la firma de subida');
+                    const { signature, timestamp, folder, public_id, cloud_name, api_key } = await sigRes.json();
+
+                    // 2. Subir a Cloudinary
+                    const cloudData = new FormData();
+                    cloudData.append('file', file);
+                    cloudData.append('signature', signature);
+                    cloudData.append('timestamp', timestamp);
+                    cloudData.append('folder', folder);
+                    cloudData.append('public_id', public_id);
+                    cloudData.append('api_key', api_key);
+
+                    const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`, {
+                        method: 'POST',
+                        body: cloudData
+                    });
+                    if (!cloudinaryRes.ok) throw new Error('Error al subir la imagen a Cloudinary');
+                    const uploadedImage = await cloudinaryRes.json();
+
+                    // 3. Registrar en backend
+                    const registerRes = await fetch(`/api/products/${id}/images/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: uploadedImage.secure_url })
+                    });
+                    if (!registerRes.ok) throw new Error('Error al registrar la imagen');
+                }
             }
 
             const variantPromises = variantes.map(async (v) => {
