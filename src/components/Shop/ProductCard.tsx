@@ -47,16 +47,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
           style={{ transform: hovered ? 'scaleY(1)' : 'scaleY(0)' }}
         />
 
-        {/* Background neutral layer */}
-        <div className="absolute inset-0 bg-foreground/[0.04] z-0" />
-
         {/* Product Images (Slideshow) */}
         {allImages.map((img, idx) => (
           <img
             key={idx}
             src={img}
             alt={`${product.name} ${idx + 1}`}
-            className="absolute inset-0 w-full h-full object-contain p-4 sm:p-6 z-10 transition-all duration-1000 ease-in-out mix-blend-multiply dark:mix-blend-normal"
+            className="absolute inset-0 w-full h-full object-cover z-10 transition-all duration-1000 ease-in-out mix-blend-multiply dark:mix-blend-normal"
             style={{ 
               opacity: currentImageIndex === idx ? 1 : 0,
               transform: currentImageIndex === idx 
@@ -66,14 +63,21 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
           />
         ))}
 
-        {/* Brand badge top-left */}
-        <div
-          className="absolute top-4 left-4 z-20 transition-all duration-500"
-          style={{ opacity: hovered ? 1 : 0, transform: hovered ? 'translateX(0)' : 'translateX(-8px)' }}
-        >
-          <span className="text-[8px] font-bold tracking-[0.3em] uppercase bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 rounded-full">
-            {brandLabel}
-          </span>
+        {/* Badges top-left */}
+        <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">
+          {product.stock === 0 && (
+            <span className="text-[8px] font-bold tracking-[0.2em] uppercase bg-foreground/80 backdrop-blur-md text-background px-3 py-1.5 rounded-full shadow-sm border border-foreground/10">
+              Agotado
+            </span>
+          )}
+          <div
+            className="transition-all duration-500"
+            style={{ opacity: hovered ? 1 : 0, transform: hovered ? 'translateX(0)' : 'translateX(-8px)' }}
+          >
+            <span className="text-[8px] font-bold tracking-[0.3em] uppercase bg-background/90 backdrop-blur-sm text-foreground px-3 py-1.5 rounded-full">
+              {brandLabel}
+            </span>
+          </div>
         </div>
 
         {/* Price badge top-right */}

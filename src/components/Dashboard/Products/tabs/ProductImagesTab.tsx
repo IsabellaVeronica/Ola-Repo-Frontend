@@ -6,6 +6,15 @@ import type { Product, ProductImage, Variant } from '@/types';
 import { Loader2, Upload, Trash, Star, RefreshCw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '@/utils/cropUtils';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -39,6 +48,11 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
     const [uploadVariantId, setUploadVariantId] = useState<string>("generic");
     const [imageToDelete, setImageToDelete] = useState<number | null>(null);
 
+    const [imageSrc, setImageSrc] = useState<string | null>(null);
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
     const fetchRes = async () => {
         if (!product?.id_producto) return;
         setLoading(true);
@@ -61,12 +75,27 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
         fetchRes();
     }, [product]);
 
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
-        setUploading(true);
         const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            setImageSrc(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    };
 
+    const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    };
+
+    const handleUploadCropped = async () => {
+        if (!imageSrc || !croppedAreaPixels) return;
         try {
+            setUploading(true);
+            const croppedFile = await getCroppedImg(imageSrc, croppedAreaPixels);
+
             // Step 1: Get a signed upload signature from backend (tiny request, no file)
             const sigRes = await fetch(`/api/products/${product.id_producto}/images/signature`, {
                 method: 'POST',
@@ -76,7 +105,7 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
 
             // Step 2: Upload DIRECTLY to Cloudinary from the browser (bypasses Vercel limit)
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', croppedFile);
             formData.append('signature', signature);
             formData.append('timestamp', timestamp);
             formData.append('folder', folder);
@@ -102,13 +131,13 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
             });
             if (!registerRes.ok) throw new Error('Error al registrar la imagen en el sistema');
 
+            setImageSrc(null);
             fetchRes();
         } catch (error: any) {
             console.error("Error uploading image", error);
             alert(`Error al subir imagen: ${error.message}`);
         } finally {
             setUploading(false);
-            e.target.value = '';
         }
     };
 
@@ -202,7 +231,7 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
                             accept="image/*"
                             className="hidden"
                             id="image-upload"
-                            onChange={handleUpload}
+                            onChange={handleFileSelect}
                             disabled={uploading}
                         />
                         <label htmlFor="image-upload">
@@ -276,6 +305,51 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            <Dialog open={!!imageSrc} onOpenChange={(open) => !open && setImageSrc(null)}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle>Recortar Imagen</DialogTitle>
+                    </DialogHeader>
+                    <div className="relative w-full h-[400px] bg-black overflow-hidden rounded-md">
+                        {imageSrc && (
+                            <Cropper
+                                image={imageSrc}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={3 / 4}
+                                onCropChange={setCrop}
+                                onCropComplete={onCropComplete}
+                                onZoomChange={setZoom}
+                            />
+                        )}
+                    </div>
+                    <div className="py-4 flex items-center justify-between gap-4">
+                        <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Zoom:</span>
+                        <input
+                            type="range"
+                            value={zoom}
+                            min={1}
+                            max={3}
+                            step={0.1}
+                            aria-labelledby="Zoom"
+                            onChange={(e) => {
+                                setZoom(Number(e.target.value));
+                            }}
+                            className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer"
+                        />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setImageSrc(null)} disabled={uploading}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleUploadCropped} disabled={uploading}>
+                            {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Subir Imagen
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

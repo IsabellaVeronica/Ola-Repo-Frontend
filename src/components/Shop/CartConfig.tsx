@@ -9,6 +9,7 @@ export interface Product {
   brand: string;
   categoryId?: string;
   brandId?: string;
+  stock?: number;
 }
 
 export const PRODUCTS: Product[] = [
