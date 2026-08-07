@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { FetchData } from '@/services/fetch';
 import { API_ENDPOINTS } from '@/services/api';
 import type { Product, ProductImage, Variant } from '@/types';
-import { Loader2, Upload, Trash, Star, RefreshCw } from 'lucide-react';
+import { Loader2, Upload, Trash, Star, RefreshCw, Crop } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Cropper from 'react-easy-crop';
@@ -49,6 +49,7 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
     const [imageToDelete, setImageToDelete] = useState<number | null>(null);
 
     const [imageSrc, setImageSrc] = useState<string | null>(null);
+    const [editingImageId, setEditingImageId] = useState<number | null>(null);
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -77,6 +78,7 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
 
     const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
+        setEditingImageId(null);
         const file = e.target.files[0];
         const reader = new FileReader();
         reader.onload = () => {
@@ -119,19 +121,30 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
             if (!cloudinaryRes.ok) throw new Error('Error al subir la imagen a Cloudinary');
             const cloudinaryData = await cloudinaryRes.json();
 
-            // Step 3: Register the Cloudinary URL in the backend DB (tiny JSON request)
-            const registerBody: any = { url: cloudinaryData.secure_url };
-            if (uploadVariantId && uploadVariantId !== "generic") {
-                registerBody.id_variante_producto = uploadVariantId;
+            if (editingImageId) {
+                // PATCH to update existing image url
+                const updateRes = await fetch(`/api/products/${product.id_producto}/images/${editingImageId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: cloudinaryData.secure_url }),
+                });
+                if (!updateRes.ok) throw new Error('Error al actualizar la imagen');
+            } else {
+                // Step 3: Register the Cloudinary URL in the backend DB (tiny JSON request)
+                const registerBody: any = { url: cloudinaryData.secure_url };
+                if (uploadVariantId && uploadVariantId !== "generic") {
+                    registerBody.id_variante_producto = uploadVariantId;
+                }
+                const registerRes = await fetch(`/api/products/${product.id_producto}/images/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registerBody),
+                });
+                if (!registerRes.ok) throw new Error('Error al registrar la imagen en el sistema');
             }
-            const registerRes = await fetch(`/api/products/${product.id_producto}/images/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(registerBody),
-            });
-            if (!registerRes.ok) throw new Error('Error al registrar la imagen en el sistema');
 
             setImageSrc(null);
+            setEditingImageId(null);
             fetchRes();
         } catch (error: any) {
             console.error("Error uploading image", error);
@@ -269,12 +282,23 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
                                 <img src={getImageUrl(img.url)} alt="Product" className="w-full h-full object-cover" />
                             </div>
                             <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                    variant="ghost" size="icon" className="h-8 w-8 text-white hover:text-destructive hover:bg-transparent"
-                                    onClick={() => setImageToDelete(img.id_imagen_producto)}
-                                >
-                                    <Trash className="h-4 w-4" />
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="ghost" size="icon" className="h-8 w-8 text-white hover:text-blue-400 hover:bg-transparent"
+                                        onClick={() => {
+                                            setEditingImageId(img.id_imagen_producto);
+                                            setImageSrc(getImageUrl(img.url));
+                                        }}
+                                    >
+                                        <Crop className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost" size="icon" className="h-8 w-8 text-white hover:text-destructive hover:bg-transparent"
+                                        onClick={() => setImageToDelete(img.id_imagen_producto)}
+                                    >
+                                        <Trash className="h-4 w-4" />
+                                    </Button>
+                                </div>
                                 {!img.es_principal && (
                                     <Button
                                         variant="ghost" className="h-6 text-white hover:text-foreground hover:bg-transparent text-xs px-2"
@@ -306,7 +330,12 @@ export const ProductImagesTab: React.FC<ProductImagesTabProps> = ({ product }) =
                 </AlertDialogContent>
             </AlertDialog>
 
-            <Dialog open={!!imageSrc} onOpenChange={(open) => !open && setImageSrc(null)}>
+            <Dialog open={!!imageSrc} onOpenChange={(open) => {
+                if (!open) {
+                    setImageSrc(null);
+                    setEditingImageId(null);
+                }
+            }}>
                 <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
                         <DialogTitle>Recortar Imagen</DialogTitle>
