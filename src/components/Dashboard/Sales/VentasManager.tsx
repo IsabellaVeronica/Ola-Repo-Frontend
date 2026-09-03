@@ -600,7 +600,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
     const fetchCatalog = useCallback(async () => {
         setCatalogLoading(true); setCatalogError('');
         try {
-            const params = new URLSearchParams({ limit: '100' });
+            const params = new URLSearchParams({ limit: '1000' });
             if (search) params.append('q', search);
             if (includeNoStock) params.append('include_no_stock', 'true');
             const res = await fetch(`/api/ventas/catalogo?${params}`);
@@ -621,7 +621,7 @@ const RegistrarVentaView = ({ onSuccess, onCancel }: { onSuccess: () => void; on
     useEffect(() => {
         const fetchConsumables = async () => {
             try {
-                const res = await fetch('/api/ventas/catalogo?limit=100&include_no_stock=true');
+                const res = await fetch('/api/ventas/catalogo?limit=1000&include_no_stock=true');
                 if (res.ok) {
                     const data = await res.json();
                     const list: CatalogVariant[] = Array.isArray(data) ? data : (data.data || data.items || []);

@@ -83,21 +83,33 @@ export const ProductGrid: React.FC = () => {
       try {
         // Construct Query Params
         const params = new URLSearchParams();
-        params.append('limit', '100'); // Fetch more to allow client filtering if backend doesn't support it yet
+        params.append('limit', '1000'); // Fetch more to retrieve all items from database
 
         if (searchTerm) params.append('q', searchTerm);
 
-        // Mapping Sorting
-        if (orderBy === 'price-asc') {
+        // Filter Category and Brand at API level
+        if (selectedCategory.id !== 'all') {
+          params.append('category', selectedCategory.id);
+        }
+        if (selectedBrand.id !== 'all') {
+          params.append('brand', selectedBrand.id);
+        }
+        if (settings?.catalogo?.ocultar_sin_stock) {
+          params.append('hideOutStock', 'true');
+        }
+
+        // Mapping Sorting (fix mapping to support both underscores and hyphens)
+        const sortType = orderBy.replace('_', '-');
+        if (sortType === 'price-asc') {
           params.append('sort', 'price');
           params.append('dir', 'asc');
-        } else if (orderBy === 'price-desc') {
+        } else if (sortType === 'price-desc') {
           params.append('sort', 'price');
           params.append('dir', 'desc');
-        } else if (orderBy === 'name-asc') {
+        } else if (sortType === 'name-asc') {
           params.append('sort', 'name');
           params.append('dir', 'asc');
-        } else if (orderBy === 'name-desc') {
+        } else if (sortType === 'name-desc') {
           params.append('sort', 'name');
           params.append('dir', 'desc');
         }
@@ -143,7 +155,7 @@ export const ProductGrid: React.FC = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchTerm, orderBy]);
+  }, [searchTerm, orderBy, selectedCategory.id, selectedBrand.id, settings?.catalogo?.ocultar_sin_stock]);
 
   // Enrich products with Meta names if missing
   const enrichedProducts = useMemo(() => {

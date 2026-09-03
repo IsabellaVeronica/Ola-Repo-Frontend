@@ -31,39 +31,39 @@ This project is a static-first web application built with Astro.js. It is design
     *   **Frontend (Astro & React)**:
         - En `reposicion.ts`, se propaga `min_stock` en el objeto enriquecido usando el parámetro `threshold`.
         - En `StockAlerts.tsx`, se ajustó `computeReplenishment` para usar `min_stock` como amortiguador de seguridad cuando no hay ventas.
-        - En `StockAlerts.tsx` UI, se cambió la visualización de `∞` a `—` cuando no haya ventas.
+        - En `StockAlerts.tsx` UI, se cambió la visualización de `∞` a `—` when no haya ventas.
 - **Solución de Error de Despliegue en Vercel**:
     *   Se eliminó la carpeta `.vercel` del historial de Git (`git rm -r --cached .vercel`) y se agregó a `.gitignore`.
-
 - **Corrección de Registro de Cargas Masivas**:
     *   Se corrigió un error en el endpoint del backend `GET /api/inventario/cargas` en `inventario.routes.js` donde se consultaba la columna inexistente `id_auditoria` de la tabla `public.auditoria`. Se cambió al nombre de columna real `id` y se mapeó como `id_auditoria` para mantener la compatibilidad del frontend, permitiendo la carga exitosa del historial de cargas masivas anteriores.
-
 - **Exclusión de Consumibles y Precios Opcionales**:
     - Omitido el requerimiento de código de barras, usando SKU autogenerado por el sistema.
     - Precios y costo hechos opcionales, guardados como `NULL` en base de datos.
     - Añadida herramienta interactiva de Margen de Ganancia (+30%, +40%, etc.) en variante y cola.
     - Excluidos los productos e información de categorías de "Consumibles" del catálogo público (retornando 404 para detalles de producto).
+- **Edición en Cola General con Selector de Productos y Recargo de Costo**:
+    - Se implementó la pestaña "Edición en Cola" en la gestión de productos con selección interactiva.
+    - Se añadió diálogo de recargo de costo y propagación de precios/costos dinámicos en sesión.
+- **Filtros del Catálogo y Límite de Productos**:
+    - Se aumentó el límite de productos en el backend de 100 a 1000 items.
+    - Se modificó `ProductGrid.tsx` para pasar los parámetros de categoría y marca al backend y escuchar sus cambios, lo que corrigió el truncamiento del catálogo.
+    - Se corrigió el mapeo de ordenamiento y se incrementó el límite de la vista POS a 1000 items.
 
-## Plan for Current Change: General Queue Editing with Product Selector & Cost Surcharge
+## Plan for Current Change: Exclude Money Transfers from Income Reports
 
 ### Goals & Features to Implement:
-1. **Dedicated Queue Editing Tab**:
-   - Provide an option inside `ProductsManagement` to start general queue editing anytime.
-   - Design a product selector component (`QueueEditSelector.tsx`) with search, listing, individual checkbox, and a "select all" ("marcar todos") checkbox.
-2. **Cost Surcharge Dialog**:
-   - Prompt the user with a dialog to optionally increase the cost by a percentage before starting the queue edit.
-3. **Dynamic Frontend Surcharge Reflection**:
-   - Save the surcharge percentage in the session.
-   - Apply the percentage to the variant costs in the frontend state when loading.
-   - Keep the inputs fully editable within the session.
-   - Save the final edited costs to the database only when clicking "Guardar y Sig." (Save & Next).
+1. **Identify Internal Money Transfers**:
+   - Add an `es_transferencia` boolean column to the `transaccion_caja` table.
+   - Set `es_transferencia = true` for both sides of a transfer when executing `POST /api/money/transferir`.
+2. **Exclude Transfers from Income Reports & Summaries**:
+   - Filter out transactions where `es_transferencia` is true from the weekly summary query.
+   - Filter out transactions where `es_transferencia` is true from the sales profit query (revenue KPIs and chart series).
 
 ### Actionable Steps:
-1. **Frontend - QueueEditSelector.tsx**:
-   - Create a clean selection layout listing products, filtering by query, select/deselect all, and starting bulk queue with surcharge modal.
-2. **Frontend - ProductsManagement.tsx**:
-   - Register the "Edición en Cola" tab and link it to the selection view.
-3. **Frontend - ProductList.tsx & BulkCreateProducts.tsx**:
-   - Modify the queue setup to save `cost_percentage` in `localStorage`.
-   - Update `BulkCreateProducts` editor to load and pre-calculate costs dynamically with surcharge, ensuring it only runs for unsaved products.
+1. **Database Migration**:
+   - Create a migration script `migrate_transacciones_transferencia.js` to add the `es_transferencia` column and backfill existing transfer records in the DB.
+2. **Backend - money.routes.js**:
+   - Modify the `/money/transferir` route to insert both outgoing (`egreso`) and incoming (`ingreso`) transactions with `es_transferencia = true`.
+3. **Backend - reports.routes.js**:
+   - Add `AND COALESCE(t.es_transferencia, false) = false` to the income/sales query parts in `/reports/sales-weekly-summary` and `/reports/sales-profit`.
 
