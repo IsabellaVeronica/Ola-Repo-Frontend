@@ -175,14 +175,19 @@ export const SalesProfitReports = () => {
     const [orderDetails, setOrderDetails] = useState<any | null>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
 
-    // Date range defaults to last 30 days
+    // Date range defaults to 1st of current month up to today
     const [fromDate, setFromDate] = useState(() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 30);
-        return d.toISOString().split('T')[0];
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `${year}-${month}-01`;
     });
     const [toDate, setToDate] = useState(() => {
-        return new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     });
 
     useEffect(() => {
