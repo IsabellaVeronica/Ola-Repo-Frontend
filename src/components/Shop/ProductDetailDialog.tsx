@@ -194,17 +194,17 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Left: Images */}
                         <div className="space-y-4">
-                            <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden border">
-                                <img src={mainImage} alt={product.nombre} className="w-full h-full object-contain mix-blend-multiply" />
+                            <div className="aspect-square bg-muted/20 rounded-2xl overflow-hidden border border-border/50 shadow-sm flex items-center justify-center">
+                                <img src={mainImage} alt={product.nombre} className="w-full h-full object-cover transition-all duration-300" />
                             </div>
                             <div className="flex gap-2 overflow-x-auto pb-2">
                                 {images.map((img, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setMainImage(img)}
-                                        className={`w-20 h-20 border rounded-md overflow-hidden flex-shrink-0 ${mainImage === img ? 'ring-2 ring-primary' : ''}`}
+                                        className={`w-20 h-20 border rounded-xl overflow-hidden flex-shrink-0 transition-all ${mainImage === img ? 'ring-2 ring-primary border-primary' : 'opacity-70 hover:opacity-100'}`}
                                     >
-                                        <img src={img} alt="Thumbnail" className="w-full h-full object-cover mix-blend-multiply" />
+                                        <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
                                     </button>
                                 ))}
                             </div>

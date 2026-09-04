@@ -15,13 +15,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
   // Compile unique images
   const allImages = Array.from(new Set([product.image, ...(product.images || [])])).filter(Boolean);
 
-  useEffect(() => {
-    if (allImages.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-    }, 3500); // Change image every 3.5 seconds
-    return () => clearInterval(interval);
-  }, [allImages.length]);
+  // Show first image normally, switch to second on hover if available
+  const activeImageIndex = (hovered && allImages.length > 1) ? 1 : 0;
 
   const currency = settings?.catalogo?.simbolo_moneda || '$';
   const showDecimals = settings?.catalogo?.mostrar_decimales !== false;
@@ -39,7 +34,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
       onClick={() => onSelect(product)}
     >
       {/* Image Container */}
-      <div className="relative w-full aspect-[3/4] overflow-hidden mb-5">
+      <div className="relative w-full aspect-[3/4] overflow-hidden mb-5 rounded-2xl">
         
         {/* Terracotta wash on hover - fills from bottom */}
         <div
@@ -47,18 +42,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
           style={{ transform: hovered ? 'scaleY(1)' : 'scaleY(0)' }}
         />
 
-        {/* Product Images (Slideshow) */}
+        {/* Product Images */}
         {allImages.map((img, idx) => (
           <img
             key={idx}
             src={img}
             alt={`${product.name} ${idx + 1}`}
-            className="absolute inset-0 w-full h-full object-cover z-10 transition-all duration-1000 ease-in-out mix-blend-multiply dark:mix-blend-normal"
+            className="absolute inset-0 w-full h-full object-cover z-10 transition-all duration-500 ease-in-out"
             style={{ 
-              opacity: currentImageIndex === idx ? 1 : 0,
-              transform: currentImageIndex === idx 
-                ? (hovered ? 'scale(1.08) translateY(-6px)' : 'scale(1) translateY(0)') 
-                : 'scale(0.95)'
+              opacity: activeImageIndex === idx ? 1 : 0,
+              transform: activeImageIndex === idx 
+                ? (hovered ? 'scale(1.05)' : 'scale(1)') 
+                : 'scale(0.98)'
             }}
           />
         ))}
