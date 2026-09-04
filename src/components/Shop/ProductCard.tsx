@@ -128,8 +128,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, set
           {product.name}
         </h3>
         
-        {/* Minimalist price for mobile devices (since hover is tricky on touch) */}
-        <div className="md:hidden mt-3 text-sm font-bold text-secondary tracking-widest bg-secondary/5 inline-block px-3 py-1 rounded-full">
+        {/* Clear price indicator for all devices */}
+        <div className="mt-2 text-sm md:text-base font-bold text-secondary tracking-widest bg-secondary/5 inline-block px-3.5 py-1 rounded-full shadow-xs">
           {currency}{formattedPrice}
         </div>
 

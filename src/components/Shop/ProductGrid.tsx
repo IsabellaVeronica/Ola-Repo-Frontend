@@ -24,8 +24,15 @@ export const ProductGrid: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState({ id: 'all', name: 'Todos' });
   const [selectedBrand, setSelectedBrand] = useState({ id: 'all', name: 'Todas' });
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 10000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 999999 });
   const [orderBy, setOrderBy] = useState('default');
+
+  // Helper to ensure relative images start with / for proxying
+  const formatImg = (imgUrl: string) => {
+    if (!imgUrl) return 'https://placehold.co/400x400/261633/FFF5F7?text=Producto';
+    if (imgUrl.startsWith('http') || imgUrl.startsWith('blob:')) return imgUrl;
+    return imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`;
+  };
 
   // Categories & Brands from API
   const [categories, setCategories] = useState<{ id: string, name: string }[]>([]);
@@ -131,13 +138,13 @@ export const ProductGrid: React.FC = () => {
           id: String(p.id_producto),
           name: p.nombre,
           price: Number(p.min_price) || Number(p.precio) || 0,
-          image: p.imagen_principal || 'https://placehold.co/400x400/261633/FFF5F7?text=Producto', // Placeholder
-          images: p.imagenes || [],
+          image: formatImg(p.imagen_principal),
+          images: Array.isArray(p.imagenes) ? p.imagenes.map((img: string) => formatImg(img)) : [],
           description: p.descripcion || '',
           category: p.categoria || '',
           brand: p.marca || '',
-          categoryId: String(p.id_categoria),
-          brandId: String(p.id_marca),
+          categoryId: String(p.id_categoria || ''),
+          brandId: String(p.id_marca || ''),
           stock: Number(p.stock) || 0
         }));
 

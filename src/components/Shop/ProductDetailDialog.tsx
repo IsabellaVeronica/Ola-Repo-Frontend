@@ -40,14 +40,21 @@ export const ProductDetailDialog: React.FC<ProductDetailDialogProps> = ({ produc
         }
     }, [isOpen, productId]);
 
+    const formatImg = (imgUrl: string) => {
+        if (!imgUrl) return 'https://placehold.co/400x400/261633/FFF5F7?text=Producto';
+        if (imgUrl.startsWith('http') || imgUrl.startsWith('blob:')) return imgUrl;
+        return imgUrl.startsWith('/') ? imgUrl : `/${imgUrl}`;
+    };
+
     const fetchDetails = async () => {
         setLoading(true);
         try {
             const data = await FetchData<any>(`${API_ENDPOINTS.CATALOG.PRODUCTS}/${productId}`);
             setProduct(data);
             setVariants(data.variantes || []);
-            setImages(data.imagenes || []);
-            if (data.imagenes?.length > 0) setMainImage(data.imagenes[0]);
+            const formattedImages = (data.imagenes || []).map((img: string) => formatImg(img));
+            setImages(formattedImages);
+            if (formattedImages.length > 0) setMainImage(formattedImages[0]);
 
             // Initialize quantities for variants
             if (data.variantes?.length > 0) {
