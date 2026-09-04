@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { MessageCircle } from 'lucide-react';
 import type { Product } from './CartConfig';
 
@@ -10,7 +10,6 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onSelect, settings }) => {
   const [hovered, setHovered] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Compile unique images
   const allImages = Array.from(new Set([product.image, ...(product.images || [])])).filter(Boolean);
