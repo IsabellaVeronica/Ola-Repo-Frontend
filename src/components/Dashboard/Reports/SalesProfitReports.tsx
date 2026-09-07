@@ -766,10 +766,10 @@ export const SalesProfitReports = () => {
                                         </td>
                                     </tr>
                                 ) : (
-                                    salesReport.map(r => (
-                                        <tr key={r.id_venta} className="hover:bg-muted/10 transition-colors font-medium">
+                                    salesReport.map((r, index) => (
+                                        <tr key={r.id_transaccion ? `tx-${r.id_transaccion}` : `v-${r.id_venta || index}`} className="hover:bg-muted/10 transition-colors font-medium">
                                             <td className="p-4 font-bold text-foreground">
-                                                #{r.id_venta}
+                                                {r.id_venta ? `#${r.id_venta}` : '—'}
                                             </td>
                                             <td className="p-4 text-muted-foreground font-semibold">
                                                 {r.id_pedido ? `#${r.id_pedido}` : '—'}
@@ -780,8 +780,24 @@ export const SalesProfitReports = () => {
                                             <td className="p-4 font-mono text-muted-foreground">
                                                 {new Date(r.fecha).toLocaleDateString()}
                                             </td>
-                                            <td className="p-4 font-bold uppercase text-[10px] text-muted-foreground/90">
-                                                {r.origen || 'pos'}
+                                            <td className="p-4">
+                                                {r.origen?.includes('Crédito') ? (
+                                                    <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 font-bold uppercase text-[9px] px-2 py-0.5 whitespace-nowrap">
+                                                        {r.origen}
+                                                    </Badge>
+                                                ) : r.origen?.includes('Apartado') ? (
+                                                    <Badge variant="outline" className="bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 font-bold uppercase text-[9px] px-2 py-0.5 whitespace-nowrap">
+                                                        {r.origen}
+                                                    </Badge>
+                                                ) : r.origen?.includes('Abono') ? (
+                                                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 font-bold uppercase text-[9px] px-2 py-0.5 whitespace-nowrap">
+                                                        {r.origen}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="font-bold uppercase text-[10px] text-muted-foreground/90">
+                                                        {r.origen || 'pos'}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="p-4 text-right font-mono font-bold text-foreground">
                                                 ${r.total_ingreso.toFixed(2)}
@@ -793,14 +809,18 @@ export const SalesProfitReports = () => {
                                                 +${r.ganancia.toFixed(2)}
                                             </td>
                                             <td className="p-4 text-center">
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-8 w-8 hover:bg-primary/10 hover:text-primary rounded-lg"
-                                                    onClick={() => loadOrderDetails(r)}
-                                                >
-                                                    <Info className="h-4 w-4" />
-                                                </Button>
+                                                {r.id_venta ? (
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary rounded-lg"
+                                                        onClick={() => loadOrderDetails(r)}
+                                                    >
+                                                        <Info className="h-4 w-4" />
+                                                    </Button>
+                                                ) : (
+                                                    <span className="text-muted-foreground/40">—</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
